@@ -19,7 +19,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
 @api_view(['GET'])
 def api_root(request):
@@ -37,9 +38,19 @@ def api_root(request):
         }
     })
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    """Health check endpoint"""
+    return Response({
+        'status': 'healthy',
+        'message': 'NextGenCRM backend is running'
+    })
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", api_root, name='api_root'),
+    path("api/v1/health/", health_check, name='health_check'),
     path("api/v1/", include('apps.users.urls')),
     path("api/v1/", include('apps.crm.urls')),
 ]
