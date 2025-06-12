@@ -459,3 +459,16 @@ export const CALL_DIRECTIONS = [
   { value: 'inbound', label: 'Inbound' },
   { value: 'outbound', label: 'Outbound' }
 ] as const;
+
+export const CONTACT_SALUTATIONS = [
+  { value: 'mr', label: 'Mr.' },
+  { value: 'ms', label: 'Ms.' },
+  { value: 'mrs', label: 'Mrs.' },
+  { value: 'dr', label: 'Dr.' },
+  { value: 'prof', label: 'Prof.' }
+] as const;
+
+export const OPPORTUNITY_TYPES = [
+  { value: 'existing_business', label: 'Existing Business' },
+  { value: 'new_business', label: 'New Business' }
+] as const;
