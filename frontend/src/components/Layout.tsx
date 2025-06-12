@@ -13,14 +13,27 @@ import {
 import { useState } from 'react'
 import clsx from 'clsx'
 import { useAuth } from '../context/AuthContext'
-import { useTranslation } from 'react-i18next'
-import { LanguageSwitcher } from './LanguageSwitcher'
+// import { useTranslation } from 'react-i18next'
+// import { LanguageSwitcher } from './LanguageSwitcher'
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
   const { user, logout } = useAuth()
-  const { t } = useTranslation()
+  // const { t } = useTranslation()
+  const t = (key: string) => {
+    const translations: Record<string, string> = {
+      'app.title': 'NextGenCRM',
+      'nav.dashboard': 'Dashboard',
+      'nav.accounts': 'Organizations',
+      'nav.contacts': 'Contacts', 
+      'nav.leads': 'Leads',
+      'nav.opportunities': 'Opportunities',
+      'nav.tasks': 'Tasks',
+      'app.logout': 'Logout'
+    }
+    return translations[key] || key
+  }
 
   const navigation = [
     { name: t('nav.dashboard'), href: '/', icon: BarChart3 },
@@ -92,7 +105,7 @@ export function Layout() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <LanguageSwitcher />
+              {/* <LanguageSwitcher /> */}
               <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
                 <Settings className="w-5 h-5" />
               </button>

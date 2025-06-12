@@ -247,6 +247,7 @@ class Lead(BaseModel, AddressModel, ContactInfoModel, AssignmentModel, TaggableM
     do_not_call = models.BooleanField(default=False)
     
     # Conversion tracking
+    converted = models.BooleanField(default=False)
     converted_at = models.DateTimeField(null=True, blank=True)
     created_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,

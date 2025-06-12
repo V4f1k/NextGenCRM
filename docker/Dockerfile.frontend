@@ -8,7 +8,7 @@ WORKDIR /app
 COPY frontend/package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # Development stage
 FROM node:18-alpine as development
@@ -19,7 +19,7 @@ WORKDIR /app
 COPY frontend/package*.json ./
 
 # Install all dependencies (including dev)
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY frontend/ .

@@ -1,8 +1,8 @@
 import { Building2, Users, UserPlus, Target, AlertCircle, Loader2, Clock } from 'lucide-react'
 import { useDashboardStats, useRecentActivities } from '../hooks/useApi'
 import { formatDistanceToNow } from 'date-fns'
-import { cs } from 'date-fns/locale'
-import { useTranslation } from 'react-i18next'
+// import { cs } from 'date-fns/locale'
+// import { useTranslation } from 'react-i18next'
 
 const getStatColor = (type: string) => {
   switch (type) {
@@ -29,7 +29,22 @@ const getActivityColor = (type: string) => {
 }
 
 export function Dashboard() {
-  const { t, i18n } = useTranslation()
+  // const { t, i18n } = useTranslation()
+  const t = (key: string) => {
+    const translations: Record<string, string> = {
+      'dashboard.title': 'Dashboard',
+      'dashboard.welcome': 'Welcome back, Admin!',
+      'dashboard.stats.organizations': 'Organizations',
+      'dashboard.stats.contacts': 'Contacts',
+      'dashboard.stats.leads': 'Leads',
+      'dashboard.stats.opportunities': 'Opportunities',
+      'dashboard.recentActivity': 'Recent Activity',
+      'dashboard.noActivity': 'No recent activity',
+      'dashboard.error': 'Failed to load data',
+      'dashboard.createdNew': 'created new'
+    }
+    return translations[key] || key
+  }
   const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats()
   const { data: activities, isLoading: activitiesLoading, error: activitiesError } = useRecentActivities(10)
 
@@ -204,7 +219,7 @@ export function Dashboard() {
                   <span className="text-xs text-gray-400">
                     {formatDistanceToNow(new Date(activity.created_at), { 
                       addSuffix: true,
-                      locale: i18n.language === 'cs' ? cs : undefined
+                      // locale: i18n.language === 'cs' ? cs : undefined
                     })}
                   </span>
                 </div>

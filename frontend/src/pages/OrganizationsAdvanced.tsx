@@ -8,11 +8,27 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { DataTable } from '../components/ui/DataTable'
 import type { Column } from '../components/ui/DataTable'
 import { useToastContext } from '../context/ToastContext'
-import { useTranslation } from 'react-i18next'
+// import { useTranslation } from 'react-i18next'
 
 export function OrganizationsAdvanced() {
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  // const { t } = useTranslation()
+  const t = (key: string) => {
+    const translations: Record<string, string> = {
+      'organizations.title': 'Organizations',
+      'organizations.subtitle': 'Manage your business organizations',
+      'organizations.newOrganization': 'New Organization',
+      'organizations.noOrganizations': 'No organizations',
+      'organizations.createFirst': 'Get started by creating your first organization.',
+      'organizations.searchPlaceholder': 'Search organizations...',
+      'common.filter': 'Filter',
+      'common.delete': 'Delete',
+      'common.confirmDelete': 'Are you sure you want to delete this item?',
+      'common.noData': 'No data found',
+      'entities.organization': 'Organization'
+    }
+    return translations[key] || key
+  }
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<OrganizationFilters>({})
   const [isFormOpen, setIsFormOpen] = useState(false)

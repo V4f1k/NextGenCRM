@@ -6,10 +6,21 @@ import { Eye, EyeOff } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+// import { useTranslation } from 'react-i18next'
 
 export function Login() {
-  const { t } = useTranslation()
+  // const { t } = useTranslation()
+  const t = (key: string) => {
+    const translations: Record<string, string> = {
+      'app.title': 'NextGenCRM',
+      'login.title': 'Sign in to your account',
+      'login.email': 'Email address',
+      'login.password': 'Password',
+      'login.submit': 'Sign in',
+      'login.submitting': 'Signing in...'
+    }
+    return translations[key] || key
+  }
   
   const loginSchema = z.object({
     username: z.string().min(1, t('auth.usernameRequired')),

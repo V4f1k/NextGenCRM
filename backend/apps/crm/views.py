@@ -1,10 +1,11 @@
-from rest_framework import generics, status, permissions, filters
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import generics, status, permissions, filters, viewsets
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q, Count, Sum, Avg
 from django.utils import timezone
+from datetime import timedelta
 
 from .models import Account, Contact, Lead, Opportunity, Task, Call
 from .serializers import (
@@ -368,3 +369,119 @@ def recent_activities(request):
     activities = activities[:limit]
     
     return Response(activities)
+
+
+# Lead ViewSet with conversion functionality
+class LeadViewSet(viewsets.ModelViewSet):
+    """Lead ViewSet with conversion functionality"""
+    queryset = Lead.objects.filter(deleted=False).order_by('-created_at')
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = LeadFilter
+    search_fields = ['first_name', 'last_name', 'email_address', 'account_name']
+    ordering_fields = ['first_name', 'last_name', 'status', 'created_at', 'modified_at']
+    ordering = ['-created_at']
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return LeadListSerializer
+        return LeadSerializer
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user, modified_by=self.request.user)
+    
+    def perform_update(self, serializer):
+        serializer.save(modified_by=self.request.user)
+    
+    def destroy(self, request, *args, **kwargs):
+        # Soft delete
+        lead = self.get_object()
+        lead.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=True, methods=['post'])
+    def convert(self, request, pk=None):
+        """Convert lead to account, contact and opportunity"""
+        lead = self.get_object()
+        
+        # Check if already converted
+        if lead.converted:
+            return Response(
+                {'error': 'Lead has already been converted'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            with transaction.atomic():
+                # Create Account
+                account = Account.objects.create(
+                    name=lead.account_name or f"{lead.first_name} {lead.last_name} Company",
+                    website=lead.website,
+                    industry=lead.industry,
+                    phone_number=lead.phone_number,
+                    email_address=lead.email_address,
+                    billing_address_street=lead.address_street,
+                    billing_address_city=lead.address_city,
+                    billing_address_state=lead.address_state,
+                    billing_address_postal_code=lead.address_postal_code,
+                    billing_address_country=lead.address_country,
+                    created_by=request.user,
+                    modified_by=request.user,
+                    assigned_user=lead.assigned_user,
+                    assigned_team=lead.assigned_team,
+                )
+                
+                # Create Contact
+                contact = Contact.objects.create(
+                    salutation_name=lead.salutation_name,
+                    first_name=lead.first_name,
+                    last_name=lead.last_name,
+                    account=account,
+                    title=lead.title,
+                    email_address=lead.email_address,
+                    phone_number=lead.phone_number,
+                    description=lead.description,
+                    do_not_call=lead.do_not_call,
+                    created_by=request.user,
+                    modified_by=request.user,
+                    assigned_user=lead.assigned_user,
+                    assigned_team=lead.assigned_team,
+                )
+                
+                # Create Opportunity if there's an amount
+                opportunity = None
+                if lead.opportunity_amount and lead.opportunity_amount > 0:
+                    opportunity = Opportunity.objects.create(
+                        name=f"{lead.account_name or account.name} - Opportunity",
+                        account=account,
+                        amount=lead.opportunity_amount,
+                        stage='prospecting',
+                        probability=10,
+                        lead_source=lead.source,
+                        close_date=timezone.now().date() + timedelta(days=30),  # 30 days from now
+                        description=lead.description,
+                        created_by=request.user,
+                        modified_by=request.user,
+                        assigned_user=lead.assigned_user,
+                        assigned_team=lead.assigned_team,
+                    )
+                    # Link contact to opportunity
+                    opportunity.contacts.add(contact)
+                
+                # Mark lead as converted
+                lead.converted = True
+                lead.converted_at = timezone.now()
+                lead.save()
+                
+                return Response({
+                    'message': 'Lead converted successfully',
+                    'account_id': str(account.id),
+                    'contact_id': str(contact.id),
+                    'opportunity_id': str(opportunity.id) if opportunity else None,
+                }, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to convert lead: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
