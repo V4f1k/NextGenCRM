@@ -1,15 +1,31 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { authService, ChangePasswordData } from '../services/auth';
-import { UserModel, LoginRequest, RegisterRequest } from '../types';
+import { authService } from '../services/auth';
+
+// Define types inline to avoid import issues
+interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  password_confirm: string;
+  first_name?: string;
+  last_name?: string;
+  title?: string;
+  department?: string;
+}
 
 interface AuthContextType {
-  user: UserModel | null;
+  user: any | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
   register: (userData: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (userData: Partial<UserModel>) => Promise<void>;
+  updateProfile: (userData: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,7 +43,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<UserModel | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -92,7 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const updateProfile = async (userData: Partial<UserModel>) => {
+  const updateProfile = async (userData: any) => {
     try {
       const updatedUser = await authService.updateProfile(userData);
       setUser(updatedUser);

@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { Plus, Search, Filter, Loader2, AlertCircle, Edit, Trash2, Building2 } from 'lucide-react'
-import { useAccounts, useDeleteAccount } from '../hooks/useApi'
-import { AccountModel, AccountFilters } from '../types'
-import { AccountForm } from '../components/forms/AccountForm'
+import { useOrganizations, useDeleteOrganization } from '../hooks/useApi'
+import type { OrganizationModel, OrganizationFilters } from '../types'
+import { OrganizationForm } from '../components/forms/OrganizationForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToastContext } from '../context/ToastContext'
 
-export function Accounts() {
+export function Organizations() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [filters, setFilters] = useState<AccountFilters>({})
+  const [filters, setFilters] = useState<OrganizationFilters>({})
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create')
-  const [selectedAccount, setSelectedAccount] = useState<AccountModel | undefined>()
-  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; account?: AccountModel }>({ isOpen: false })
+  const [selectedOrganization, setSelectedOrganization] = useState<OrganizationModel | undefined>()
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; organization?: OrganizationModel }>({ isOpen: false })
   
   const toast = useToastContext()
   
@@ -22,14 +22,14 @@ export function Accounts() {
     ...(searchTerm && { search: searchTerm }),
   }
   
-  const { data, isLoading, error, refetch } = useAccounts(queryFilters)
-  const deleteAccountMutation = useDeleteAccount({
+  const { data, isLoading, error, refetch } = useOrganizations(queryFilters)
+  const deleteOrganizationMutation = useDeleteOrganization({
     onSuccess: () => {
-      toast.success('Account deleted successfully')
+      toast.success('Organization deleted successfully')
       setDeleteDialog({ isOpen: false })
     },
     onError: (error) => {
-      toast.error('Failed to delete account', {
+      toast.error('Failed to delete organization', {
         description: error.message,
       })
     },
@@ -64,25 +64,25 @@ export function Accounts() {
     setSearchTerm(e.target.value)
   }
 
-  const handleCreateAccount = () => {
+  const handleCreateOrganization = () => {
     setFormMode('create')
-    setSelectedAccount(undefined)
+    setSelectedOrganization(undefined)
     setIsFormOpen(true)
   }
 
-  const handleEditAccount = (account: AccountModel) => {
+  const handleEditOrganization = (organization: OrganizationModel) => {
     setFormMode('edit')
-    setSelectedAccount(account)
+    setSelectedOrganization(organization)
     setIsFormOpen(true)
   }
 
-  const handleDeleteAccount = (account: AccountModel) => {
-    setDeleteDialog({ isOpen: true, account })
+  const handleDeleteOrganization = (organization: OrganizationModel) => {
+    setDeleteDialog({ isOpen: true, organization })
   }
 
   const confirmDelete = () => {
-    if (deleteDialog.account) {
-      deleteAccountMutation.mutate(deleteDialog.account.id)
+    if (deleteDialog.organization) {
+      deleteOrganizationMutation.mutate(deleteDialog.organization.id)
     }
   }
   return (
@@ -90,14 +90,14 @@ export function Accounts() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Accounts</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Organizations</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage your business accounts and organizations
+            Manage your business organizations and companies
           </p>
         </div>
-        <button className="btn-primary px-4 py-2" onClick={handleCreateAccount}>
+        <button className="btn-primary px-4 py-2" onClick={handleCreateOrganization}>
           <Plus className="w-4 h-4 mr-2" />
-          New Account
+          New Organization
         </button>
       </div>
 
@@ -109,7 +109,7 @@ export function Accounts() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search accounts..."
+                placeholder="Search organizations..."
                 className="input pl-10"
                 value={searchTerm}
                 onChange={handleSearch}
@@ -125,7 +125,7 @@ export function Accounts() {
         </div>
       </div>
 
-      {/* Accounts List */}
+      {/* Organizations List */}
       <div className="card">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -134,7 +134,7 @@ export function Accounts() {
         ) : error ? (
           <div className="text-center py-12">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-4">Failed to load accounts</p>
+            <p className="text-red-600 mb-4">Failed to load organizations</p>
             <button 
               onClick={() => refetch()}
               className="btn-primary px-4 py-2"
@@ -169,59 +169,59 @@ export function Accounts() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {data.results.map((account) => (
-                    <tr key={account.id} className="hover:bg-gray-50">
+                  {data.results.map((organization) => (
+                    <tr key={organization.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {account.name}
+                            {organization.name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {account.website || 'No website'}
+                            {organization.website || 'No website'}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {account.type ? (
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(account.type)}`}>
-                            {account.type.charAt(0).toUpperCase() + account.type.slice(1)}
+                        {organization.type ? (
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(organization.type)}`}>
+                            {organization.type.charAt(0).toUpperCase() + organization.type.slice(1)}
                           </span>
                         ) : (
                           <span className="text-gray-400 text-sm">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {account.industry ? (
-                          account.industry.charAt(0).toUpperCase() + account.industry.slice(1).replace('_', ' ')
+                        {organization.industry ? (
+                          organization.industry.charAt(0).toUpperCase() + organization.industry.slice(1).replace('_', ' ')
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {account.email_address || 'No email'}
+                          {organization.email_address || 'No email'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {account.phone_number || 'No phone'}
+                          {organization.phone_number || 'No phone'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(account.annual_revenue)}
+                        {formatCurrency(organization.annual_revenue)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           <button 
                             className="text-primary-600 hover:text-primary-900 p-1"
-                            title="Edit account"
-                            onClick={() => handleEditAccount(account)}
+                            title="Edit organization"
+                            onClick={() => handleEditOrganization(organization)}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button 
                             className="text-red-600 hover:text-red-900 p-1"
-                            title="Delete account"
-                            onClick={() => handleDeleteAccount(account)}
-                            disabled={deleteAccountMutation.isPending}
+                            title="Delete organization"
+                            onClick={() => handleDeleteOrganization(organization)}
+                            disabled={deleteOrganizationMutation.isPending}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -237,7 +237,7 @@ export function Accounts() {
             {data.count > data.results.length && (
               <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-t border-gray-200">
                 <div className="text-sm text-gray-500">
-                  Showing {data.results.length} of {data.count} accounts
+                  Showing {data.results.length} of {data.count} organizations
                 </div>
                 <div className="flex gap-2">
                   {data.previous && (
@@ -257,23 +257,23 @@ export function Accounts() {
         ) : (
           <div className="text-center py-12">
             <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No accounts found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations found</h3>
             <p className="text-gray-500 mb-6">
-              {searchTerm ? 'Try adjusting your search criteria.' : 'Get started by creating your first account.'}
+              {searchTerm ? 'Try adjusting your search criteria.' : 'Get started by creating your first organization.'}
             </p>
-            <button className="btn-primary px-6 py-2" onClick={handleCreateAccount}>
+            <button className="btn-primary px-6 py-2" onClick={handleCreateOrganization}>
               <Plus className="w-4 h-4 mr-2" />
-              Create Account
+              Create Organization
             </button>
           </div>
         )}
       </div>
 
-      {/* Account Form Modal */}
-      <AccountForm
+      {/* Organization Form Modal */}
+      <OrganizationForm
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
-        account={selectedAccount}
+        organization={selectedOrganization}
         mode={formMode}
       />
 
@@ -282,11 +282,11 @@ export function Accounts() {
         isOpen={deleteDialog.isOpen}
         onClose={() => setDeleteDialog({ isOpen: false })}
         onConfirm={confirmDelete}
-        title="Delete Account"
-        description={`Are you sure you want to delete "${deleteDialog.account?.name}"? This action cannot be undone.`}
+        title="Delete Organization"
+        description={`Are you sure you want to delete "${deleteDialog.organization?.name}"? This action cannot be undone.`}
         confirmText="Delete"
         type="danger"
-        isLoading={deleteAccountMutation.isPending}
+        isLoading={deleteOrganizationMutation.isPending}
       />
     </div>
   )

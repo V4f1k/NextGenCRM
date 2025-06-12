@@ -1,0 +1,192 @@
+{
+  "app": {
+    "title": "NextGenCRM",
+    "logout": "Odhlásit"
+  },
+  "nav": {
+    "dashboard": "Přehled",
+    "organizations": "Organizace",
+    "contacts": "Kontakty",
+    "leads": "Leady",
+    "opportunities": "Příležitosti",
+    "tasks": "Úkoly"
+  },
+  "dashboard": {
+    "title": "Přehled",
+    "welcome": "Vítejte zpět, {{name}}!",
+    "stats": {
+      "organizations": "Organizace",
+      "contacts": "Kontakty",
+      "leads": "Leady",
+      "opportunities": "Příležitosti"
+    },
+    "recentActivity": "Nedávná aktivita",
+    "noActivity": "Žádná nedávná aktivita",
+    "viewAll": "Zobrazit vše",
+    "createdNew": "vytvořil/a nový",
+    "loading": "Načítání dat...",
+    "error": "Nepodařilo se načíst data"
+  },
+  "login": {
+    "title": "Přihlaste se do svého účtu",
+    "email": "E-mailová adresa",
+    "password": "Heslo",
+    "submit": "Přihlásit se",
+    "submitting": "Přihlašování...",
+    "rememberMe": "Zapamatovat si mě",
+    "forgotPassword": "Zapomněli jste heslo?",
+    "errors": {
+      "invalidCredentials": "Neplatný e-mail nebo heslo",
+      "serverError": "Chyba serveru. Zkuste to prosím později."
+    }
+  },
+  "common": {
+    "create": "Vytvořit",
+    "edit": "Upravit",
+    "delete": "Smazat",
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "search": "Hledat",
+    "filter": "Filtrovat",
+    "actions": "Akce",
+    "loading": "Načítání...",
+    "error": "Chyba",
+    "success": "Úspěch",
+    "noData": "Žádná data",
+    "confirmDelete": "Opravdu chcete smazat tuto položku?",
+    "new": "Nový",
+    "status": "Stav",
+    "createdAt": "Vytvořeno",
+    "updatedAt": "Upraveno"
+  },
+  "entities": {
+    "organization": "Organizace",
+    "organizations": "Organizace",
+    "contact": "Kontakt",
+    "contacts": "Kontakty",
+    "lead": "Lead",
+    "leads": "Leady",
+    "opportunity": "Příležitost",
+    "opportunities": "Příležitosti",
+    "task": "Úkol",
+    "tasks": "Úkoly"
+  },
+  "fields": {
+    "name": "Název",
+    "firstName": "Jméno",
+    "lastName": "Příjmení",
+    "email": "E-mail",
+    "phone": "Telefon",
+    "company": "Společnost",
+    "title": "Pozice",
+    "industry": "Odvětví",
+    "website": "Web",
+    "address": "Adresa",
+    "street": "Ulice",
+    "city": "Město",
+    "state": "Kraj",
+    "postalCode": "PSČ",
+    "country": "Země",
+    "description": "Popis",
+    "assignedTo": "Přiřazeno",
+    "createdBy": "Vytvořil",
+    "amount": "Částka",
+    "stage": "Fáze",
+    "probability": "Pravděpodobnost",
+    "closeDate": "Datum uzavření",
+    "source": "Zdroj",
+    "priority": "Priorita",
+    "dueDate": "Termín",
+    "type": "Typ"
+  },
+  "organizations": {
+    "title": "Organizace",
+    "subtitle": "Spravujte své obchodní organizace a společnosti",
+    "newOrganization": "Nová organizace",
+    "noOrganizations": "Žádné organizace",
+    "createFirst": "Začněte vytvořením první organizace.",
+    "searchPlaceholder": "Hledat organizace...",
+    "form": {
+      "title": {
+        "create": "Vytvořit novou organizaci",
+        "edit": "Upravit organizaci"
+      }
+    }
+  },
+  "contacts": {
+    "title": "Kontakty",
+    "subtitle": "Spravujte své kontakty a vztahy",
+    "newContact": "Nový kontakt",
+    "noContacts": "Žádné kontakty",
+    "createFirst": "Začněte vytvořením prvního kontaktu.",
+    "searchPlaceholder": "Hledat kontakty...",
+    "form": {
+      "title": {
+        "create": "Vytvořit nový kontakt",
+        "edit": "Upravit kontakt"
+      }
+    }
+  },
+  "leads": {
+    "title": "Leady",
+    "subtitle": "Spravujte potenciální zákazníky a konverzní příležitosti",
+    "newLead": "Nový lead",
+    "noLeads": "Žádné leady",
+    "createFirst": "Začněte vytvořením prvního leadu.",
+    "searchPlaceholder": "Hledat leady...",
+    "convert": "Konvertovat",
+    "convertTitle": "Konvertovat lead",
+    "convertDescription": "Konvertovat \"{{name}}\" na organizaci, kontakt a/nebo příležitost?",
+    "totalLeads": "Celkem leadů",
+    "newLeads": "Nové leady",
+    "inProcess": "V procesu",
+    "converted": "Konvertováno",
+    "form": {
+      "title": {
+        "create": "Vytvořit nový lead",
+        "edit": "Upravit lead"
+      }
+    }
+  },
+  "opportunities": {
+    "title": "Příležitosti",
+    "subtitle": "Spravujte svůj prodejní pipeline a sledujte obchody",
+    "newOpportunity": "Nová příležitost",
+    "noOpportunities": "Žádné příležitosti",
+    "createFirst": "Začněte vytvořením první příležitosti.",
+    "searchPlaceholder": "Hledat příležitosti...",
+    "pipeline": "Pipeline",
+    "table": "Tabulka",
+    "totalPipeline": "Celkem v pipeline",
+    "weightedPipeline": "Vážená hodnota",
+    "avgDealSize": "Průměrná velikost obchodu",
+    "totalOpportunities": "Celkem příležitostí",
+    "form": {
+      "title": {
+        "create": "Vytvořit novou příležitost",
+        "edit": "Upravit příležitost"
+      }
+    }
+  },
+  "tasks": {
+    "title": "Úkoly",
+    "subtitle": "Sledujte a spravujte své úkoly",
+    "newTask": "Nový úkol",
+    "noTasks": "Žádné úkoly",
+    "createFirst": "Začněte vytvořením prvního úkolu.",
+    "searchPlaceholder": "Hledat úkoly...",
+    "myTasks": "Moje úkoly",
+    "allTasks": "Všechny úkoly",
+    "totalTasks": "Celkem úkolů",
+    "notStarted": "Nezahájeno",
+    "inProgress": "Probíhá",
+    "completed": "Dokončeno",
+    "overdue": "Po termínu",
+    "form": {
+      "title": {
+        "create": "Vytvořit nový úkol",
+        "edit": "Upravit úkol"
+      }
+    }
+  }
+}

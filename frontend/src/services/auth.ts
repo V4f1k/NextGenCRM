@@ -1,18 +1,42 @@
-import { 
-  UserModel, 
-  LoginRequest, 
-  LoginResponse, 
-  RegisterRequest, 
-  RegisterResponse 
-} from '../types';
+// Import UserModel type
+import type { UserModel } from '../types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+// Define authentication types inline to avoid import issues
+interface LoginRequest {
+  username: string;
+  password: string;
+}
 
-export interface ChangePasswordData {
+interface LoginResponse {
+  access: string;
+  refresh: string;
+  user: UserModel;
+}
+
+interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  password_confirm: string;
+  first_name?: string;
+  last_name?: string;
+  title?: string;
+  department?: string;
+}
+
+interface RegisterResponse {
+  user: UserModel;
+  refresh: string;
+  access: string;
+}
+
+interface ChangePasswordData {
   old_password: string;
   new_password: string;
   new_password_confirm: string;
 }
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 class AuthService {
   private baseURL = API_BASE_URL;

@@ -1,9 +1,10 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ContactModel, CONTACT_SALUTATIONS } from '../../types'
+import type { ContactModel } from '../../types'
+import { CONTACT_SALUTATIONS } from '../../types'
 import { Modal, ModalBody, ModalFooter } from '../ui/Modal'
-import { useCreateContact, useUpdateContact, useAccounts } from '../../hooks/useApi'
+import { useCreateContact, useUpdateContact, useOrganizations } from '../../hooks/useApi'
 import { useToastContext } from '../../context/ToastContext'
 import { useEffect } from 'react'
 import clsx from 'clsx'
@@ -17,7 +18,7 @@ const contactSchema = z.object({
   email_address: z.string().email('Please enter a valid email').optional().or(z.literal('')),
   phone_number: z.string().optional(),
   mobile_phone: z.string().optional(),
-  account_id: z.string().optional(),
+  organization_id: z.string().optional(),
   do_not_call: z.boolean().default(false),
   address_street: z.string().optional(),
   address_city: z.string().optional(),
@@ -34,10 +35,10 @@ interface ContactFormProps {
   onClose: () => void
   contact?: ContactModel
   mode: 'create' | 'edit'
-  preselectedAccountId?: string
+  preselectedOrganizationId?: string
 }
 
-export function ContactForm({ isOpen, onClose, contact, mode, preselectedAccountId }: ContactFormProps) {
+export function ContactForm({ isOpen, onClose, contact, mode, preselectedOrganizationId }: ContactFormProps) {
   const toast = useToastContext()
   
   const createContactMutation = useCreateContact({
@@ -69,8 +70,8 @@ export function ContactForm({ isOpen, onClose, contact, mode, preselectedAccount
     },
   })
 
-  // Fetch accounts for dropdown
-  const { data: accountsData } = useAccounts()
+  // Fetch organizations for dropdown
+  const { data: organizationsData } = useOrganizations()
 
   const {
     register,
@@ -98,7 +99,7 @@ export function ContactForm({ isOpen, onClose, contact, mode, preselectedAccount
         email_address: contact.email_address || '',
         phone_number: contact.phone_number || '',
         mobile_phone: contact.mobile_phone || '',
-        account_id: contact.account_id || '',
+        organization_id: contact.organization || '',
         do_not_call: contact.do_not_call || false,
         address_street: contact.address_street || '',
         address_city: contact.address_city || '',
@@ -113,17 +114,17 @@ export function ContactForm({ isOpen, onClose, contact, mode, preselectedAccount
       })
     } else if (mode === 'create') {
       reset()
-      if (preselectedAccountId) {
-        setValue('account_id', preselectedAccountId)
+      if (preselectedOrganizationId) {
+        setValue('organization_id', preselectedOrganizationId)
       }
     }
-  }, [contact, mode, setValue, reset, preselectedAccountId])
+  }, [contact, mode, setValue, reset, preselectedOrganizationId])
 
   const onSubmit = (data: ContactFormData) => {
     const cleanedData = {
       ...data,
       email_address: data.email_address || undefined,
-      account_id: data.account_id || undefined,
+      organization_id: data.organization_id || undefined,
     }
 
     if (mode === 'create') {
@@ -167,14 +168,14 @@ export function ContactForm({ isOpen, onClose, contact, mode, preselectedAccount
               </div>
 
               <div>
-                <label htmlFor="account_id" className="block text-sm font-medium text-gray-700 mb-1">
-                  Account
+                <label htmlFor="organization_id" className="block text-sm font-medium text-gray-700 mb-1">
+                  Organization
                 </label>
-                <select {...register('account_id')} className="input">
-                  <option value="">Select account</option>
-                  {accountsData?.results?.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.name}
+                <select {...register('organization_id')} className="input">
+                  <option value="">Select organization</option>
+                  {organizationsData?.results?.map((organization) => (
+                    <option key={organization.id} value={organization.id}>
+                      {organization.name}
                     </option>
                   ))}
                 </select>

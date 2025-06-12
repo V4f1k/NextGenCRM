@@ -6,15 +6,17 @@ import { Eye, EyeOff } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate, useLocation } from 'react-router-dom'
-
-const loginSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
-  password: z.string().min(1, 'Password is required'),
-})
-
-type LoginForm = z.infer<typeof loginSchema>
+import { useTranslation } from 'react-i18next'
 
 export function Login() {
+  const { t } = useTranslation()
+  
+  const loginSchema = z.object({
+    username: z.string().min(1, t('auth.usernameRequired')),
+    password: z.string().min(1, t('auth.passwordRequired')),
+  })
+
+  type LoginForm = z.infer<typeof loginSchema>
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -42,7 +44,7 @@ export function Login() {
       const from = location.state?.from?.pathname || '/'
       navigate(from, { replace: true })
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Login failed')
+      setError(error instanceof Error ? error.message : t('auth.loginFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -53,10 +55,10 @@ export function Login() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            NextGenCRM
+            {t('app.title')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your account
+            {t('login.title')}
           </p>
         </div>
         
@@ -70,7 +72,7 @@ export function Login() {
           <div className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
+                {t('login.email')}
               </label>
               <input
                 {...register('username')}
@@ -79,7 +81,7 @@ export function Login() {
                   'input mt-1',
                   errors.username && 'border-red-300 focus:border-red-500 focus:ring-red-500'
                 )}
-                placeholder="Enter your username"
+                placeholder="admin@test.com"
               />
               {errors.username && (
                 <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
@@ -88,7 +90,7 @@ export function Login() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                {t('login.password')}
               </label>
               <div className="mt-1 relative">
                 <input
@@ -98,7 +100,7 @@ export function Login() {
                     'input pr-10',
                     errors.password && 'border-red-300 focus:border-red-500 focus:ring-red-500'
                   )}
-                  placeholder="Enter your password"
+                  placeholder="********"
                 />
                 <button
                   type="button"
@@ -124,14 +126,14 @@ export function Login() {
               disabled={isLoading}
               className="btn-primary w-full py-2 px-4 h-10 disabled:opacity-50"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? t('login.submitting') : t('login.submit')}
             </button>
           </div>
         </form>
         
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Demo credentials: admin / admin123
+            Demo: admin@test.com / admin123
           </p>
         </div>
       </div>

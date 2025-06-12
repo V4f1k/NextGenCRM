@@ -1,5 +1,5 @@
-import {
-  AccountModel,
+import type {
+  OrganizationModel,
   ContactModel,
   LeadModel,
   OpportunityModel,
@@ -8,7 +8,7 @@ import {
   PaginatedResponse,
   DashboardStats,
   RecentActivity,
-  AccountFilters,
+  OrganizationFilters,
   ContactFilters,
   LeadFilters,
   OpportunityFilters,
@@ -111,24 +111,24 @@ class APIService {
     });
   }
 
-  // Account API
-  async getAccounts(filters?: AccountFilters): Promise<PaginatedResponse<AccountModel>> {
-    return this.list<AccountModel>('/accounts/', filters);
+  // Organization API (using legacy /accounts/ endpoints for backward compatibility)
+  async getOrganizations(filters?: OrganizationFilters): Promise<PaginatedResponse<OrganizationModel>> {
+    return this.list<OrganizationModel>('/accounts/', filters);
   }
 
-  async getAccount(id: string): Promise<AccountModel> {
-    return this.retrieve<AccountModel>('/accounts/', id);
+  async getOrganization(id: string): Promise<OrganizationModel> {
+    return this.retrieve<OrganizationModel>('/accounts/', id);
   }
 
-  async createAccount(data: Partial<AccountModel>): Promise<AccountModel> {
-    return this.create<AccountModel>('/accounts/', data);
+  async createOrganization(data: Partial<OrganizationModel>): Promise<OrganizationModel> {
+    return this.create<OrganizationModel>('/accounts/', data);
   }
 
-  async updateAccount(id: string, data: Partial<AccountModel>): Promise<AccountModel> {
-    return this.update<AccountModel>('/accounts/', id, data);
+  async updateOrganization(id: string, data: Partial<OrganizationModel>): Promise<OrganizationModel> {
+    return this.update<OrganizationModel>('/accounts/', id, data);
   }
 
-  async deleteAccount(id: string): Promise<void> {
+  async deleteOrganization(id: string): Promise<void> {
     return this.delete('/accounts/', id);
   }
 
@@ -172,6 +172,22 @@ class APIService {
 
   async deleteLead(id: string): Promise<void> {
     return this.delete('/leads/', id);
+  }
+
+  async convertLead(id: string): Promise<{
+    message: string;
+    organization_id: string;
+    contact_id: string;
+    opportunity_id: string | null;
+  }> {
+    const response = await this.apiRequest(`/leads/${id}/convert/`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to convert lead');
+    }
+    return response.json();
   }
 
   // Opportunity API
@@ -251,7 +267,7 @@ class APIService {
 
   // Search API
   async globalSearch(query: string, entities?: string[]): Promise<{
-    accounts: AccountModel[];
+    organizations: OrganizationModel[];
     contacts: ContactModel[];
     leads: LeadModel[];
     opportunities: OpportunityModel[];
@@ -260,7 +276,7 @@ class APIService {
   }> {
     const filters = { search: query };
     const results = await Promise.allSettled([
-      this.getAccounts(filters),
+      this.getOrganizations(filters),
       this.getContacts(filters),
       this.getLeads(filters),
       this.getOpportunities(filters),
@@ -269,7 +285,7 @@ class APIService {
     ]);
 
     return {
-      accounts: results[0].status === 'fulfilled' ? results[0].value.results : [],
+      organizations: results[0].status === 'fulfilled' ? results[0].value.results : [],
       contacts: results[1].status === 'fulfilled' ? results[1].value.results : [],
       leads: results[2].status === 'fulfilled' ? results[2].value.results : [],
       opportunities: results[3].status === 'fulfilled' ? results[3].value.results : [],

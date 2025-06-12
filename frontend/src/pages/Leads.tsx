@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { Plus, Search, Filter, Edit, Trash2, UserPlus, Target, ArrowRight, Building2 } from 'lucide-react'
-import { useLeads, useDeleteLead } from '../hooks/useApi'
-import { LeadModel, LeadFilters, LEAD_STATUSES, LEAD_SOURCES } from '../types'
+import { useNavigate } from 'react-router-dom'
+import { useLeads, useDeleteLead, useConvertLead } from '../hooks/useApi'
+import type { LeadModel, LeadFilters } from '../types'
+import { LEAD_STATUSES, LEAD_SOURCES } from '../types'
 import { LeadForm } from '../components/forms/LeadForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { DataTable, Column } from '../components/ui/DataTable'
+import { DataTable } from '../components/ui/DataTable'
+import type { Column } from '../components/ui/DataTable'
 import { useToastContext } from '../context/ToastContext'
 
 export function Leads() {
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<LeadFilters>({})
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -37,6 +41,20 @@ export function Leads() {
     },
     onError: (error) => {
       toast.error('Failed to delete lead', {
+        description: error.message,
+      })
+    },
+  })
+
+  const convertLeadMutation = useConvertLead({
+    onSuccess: (result) => {
+      toast.success('Lead converted successfully!', {
+        description: `Created Organization, Contact, and ${result.opportunity_id ? 'Opportunity' : 'records'}`
+      })
+      setConvertDialog({ isOpen: false })
+    },
+    onError: (error) => {
+      toast.error('Failed to convert lead', {
         description: error.message,
       })
     },
@@ -100,9 +118,7 @@ export function Leads() {
 
   const confirmConvert = () => {
     if (convertDialog.lead) {
-      // TODO: Implement lead conversion to account/contact/opportunity
-      toast.info('Lead conversion functionality coming soon')
-      setConvertDialog({ isOpen: false })
+      convertLeadMutation.mutate(convertDialog.lead.id)
     }
   }
 
@@ -372,8 +388,7 @@ export function Leads() {
           onSortChange: handleSortChange,
         }}
         onRowClick={(lead) => {
-          // Optional: Navigate to lead detail page
-          console.log('Row clicked:', lead)
+          navigate(`/leads/${lead.id}`)
         }}
       />
 
@@ -403,9 +418,33 @@ export function Leads() {
         onClose={() => setConvertDialog({ isOpen: false })}
         onConfirm={confirmConvert}
         title="Convert Lead"
-        description={`Convert "${convertDialog.lead?.first_name} ${convertDialog.lead?.last_name}" to Account, Contact, and/or Opportunity?`}
-        confirmText="Convert"
+        description={
+          <div className="space-y-3">
+            <p className="text-gray-700">
+              Convert <strong>"{convertDialog.lead?.first_name} {convertDialog.lead?.last_name}"</strong> into business records:
+            </p>
+            <div className="bg-blue-50 p-4 rounded-lg space-y-2 text-sm">
+              <div className="flex items-center">
+                <Building2 className="w-4 h-4 text-blue-600 mr-2" />
+                <span><strong>Organization:</strong> {convertDialog.lead?.account_name || 'New organization'}</span>
+              </div>
+              <div className="flex items-center">
+                <UserPlus className="w-4 h-4 text-green-600 mr-2" />
+                <span><strong>Contact:</strong> {convertDialog.lead?.first_name} {convertDialog.lead?.last_name}</span>
+              </div>
+              <div className="flex items-center">
+                <Target className="w-4 h-4 text-purple-600 mr-2" />
+                <span><strong>Opportunity:</strong> {convertDialog.lead?.opportunity_amount ? `$${convertDialog.lead.opportunity_amount}` : 'Potential deal'}</span>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">
+              The original lead will be marked as "converted" and preserved for history.
+            </p>
+          </div>
+        }
+        confirmText="Convert Lead"
         type="success"
+        isLoading={convertLeadMutation.isPending}
       />
     </div>
   )

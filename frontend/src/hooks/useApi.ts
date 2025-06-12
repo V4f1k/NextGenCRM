@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
 import { apiService } from '../services/api';
-import {
-  AccountModel,
+import type {
+  OrganizationModel,
   ContactModel,
   LeadModel,
   OpportunityModel,
@@ -10,7 +11,7 @@ import {
   PaginatedResponse,
   DashboardStats,
   RecentActivity,
-  AccountFilters,
+  OrganizationFilters,
   ContactFilters,
   LeadFilters,
   OpportunityFilters,
@@ -20,8 +21,8 @@ import {
 
 // Query Keys
 export const queryKeys = {
-  accounts: ['accounts'] as const,
-  account: (id: string) => ['accounts', id] as const,
+  organizations: ['organizations'] as const,
+  organization: (id: string) => ['organizations', id] as const,
   contacts: ['contacts'] as const,
   contact: (id: string) => ['contacts', id] as const,
   leads: ['leads'] as const,
@@ -37,76 +38,83 @@ export const queryKeys = {
   globalSearch: (query: string) => ['search', query] as const,
 };
 
-// Account Hooks
-export const useAccounts = (
-  filters?: AccountFilters,
-  options?: UseQueryOptions<PaginatedResponse<AccountModel>, Error>
+// Organization Hooks
+export const useOrganizations = (
+  filters?: OrganizationFilters,
+  options?: UseQueryOptions<PaginatedResponse<OrganizationModel>, Error>
 ) => {
   return useQuery({
-    queryKey: [...queryKeys.accounts, filters],
-    queryFn: () => apiService.getAccounts(filters),
+    queryKey: [...queryKeys.organizations, filters],
+    queryFn: () => apiService.getOrganizations(filters),
     ...options,
   });
 };
 
-export const useAccount = (
+export const useOrganization = (
   id: string,
-  options?: UseQueryOptions<AccountModel, Error>
+  options?: UseQueryOptions<OrganizationModel, Error>
 ) => {
   return useQuery({
-    queryKey: queryKeys.account(id),
-    queryFn: () => apiService.getAccount(id),
+    queryKey: queryKeys.organization(id),
+    queryFn: () => apiService.getOrganization(id),
     enabled: !!id,
     ...options,
   });
 };
 
-export const useCreateAccount = (
-  options?: UseMutationOptions<AccountModel, Error, Partial<AccountModel>>
+export const useCreateOrganization = (
+  options?: UseMutationOptions<OrganizationModel, Error, Partial<OrganizationModel>>
 ) => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data: Partial<AccountModel>) => apiService.createAccount(data),
+    mutationFn: (data: Partial<OrganizationModel>) => apiService.createOrganization(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.accounts });
+      queryClient.invalidateQueries({ queryKey: queryKeys.organizations });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats });
     },
     ...options,
   });
 };
 
-export const useUpdateAccount = (
-  options?: UseMutationOptions<AccountModel, Error, { id: string; data: Partial<AccountModel> }>
+export const useUpdateOrganization = (
+  options?: UseMutationOptions<OrganizationModel, Error, { id: string; data: Partial<OrganizationModel> }>
 ) => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<AccountModel> }) => 
-      apiService.updateAccount(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<OrganizationModel> }) => 
+      apiService.updateOrganization(id, data),
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.accounts });
-      queryClient.setQueryData(queryKeys.account(variables.id), data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.organizations });
+      queryClient.setQueryData(queryKeys.organization(variables.id), data);
     },
     ...options,
   });
 };
 
-export const useDeleteAccount = (
+export const useDeleteOrganization = (
   options?: UseMutationOptions<void, Error, string>
 ) => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id: string) => apiService.deleteAccount(id),
+    mutationFn: (id: string) => apiService.deleteOrganization(id),
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.accounts });
-      queryClient.removeQueries({ queryKey: queryKeys.account(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.organizations });
+      queryClient.removeQueries({ queryKey: queryKeys.organization(id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats });
     },
     ...options,
   });
 };
+
+// Legacy Account Hooks - kept for backward compatibility
+export const useAccounts = useOrganizations;
+export const useAccount = useOrganization;
+export const useCreateAccount = useCreateOrganization;
+export const useUpdateAccount = useUpdateOrganization;
+export const useDeleteAccount = useDeleteOrganization;
 
 // Contact Hooks
 export const useContacts = (
@@ -245,6 +253,25 @@ export const useDeleteLead = (
       queryClient.invalidateQueries({ queryKey: queryKeys.leads });
       queryClient.removeQueries({ queryKey: queryKeys.lead(id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats });
+    },
+    ...options,
+  });
+};
+
+export const useConvertLead = (
+  options?: UseMutationOptions<any, Error, string>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => apiService.convertLead(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads });
+      queryClient.removeQueries({ queryKey: queryKeys.lead(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats });
+      queryClient.invalidateQueries({ queryKey: queryKeys.organizations });
+      queryClient.invalidateQueries({ queryKey: queryKeys.contacts });
+      queryClient.invalidateQueries({ queryKey: queryKeys.opportunities });
     },
     ...options,
   });

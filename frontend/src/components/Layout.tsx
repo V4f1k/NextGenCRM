@@ -13,20 +13,23 @@ import {
 import { useState } from 'react'
 import clsx from 'clsx'
 import { useAuth } from '../context/AuthContext'
-
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: BarChart3 },
-  { name: 'Accounts', href: '/accounts', icon: Building2 },
-  { name: 'Contacts', href: '/contacts', icon: Users },
-  { name: 'Leads', href: '/leads', icon: UserPlus },
-  { name: 'Opportunities', href: '/opportunities', icon: Target },
-  { name: 'Tasks', href: '/tasks', icon: CheckSquare },
-]
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from './LanguageSwitcher'
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { t } = useTranslation()
+
+  const navigation = [
+    { name: t('nav.dashboard'), href: '/', icon: BarChart3 },
+    { name: t('nav.organizations'), href: '/organizations', icon: Building2 },
+    { name: t('nav.contacts'), href: '/contacts', icon: Users },
+    { name: t('nav.leads'), href: '/leads', icon: UserPlus },
+    { name: t('nav.opportunities'), href: '/opportunities', icon: Target },
+    { name: t('nav.tasks'), href: '/tasks', icon: CheckSquare },
+  ]
 
   const handleLogout = async () => {
     try {
@@ -44,7 +47,7 @@ export function Layout() {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
         <div className="flex items-center justify-center h-16 px-4 bg-primary-600">
-          <h1 className="text-xl font-bold text-white">NextGenCRM</h1>
+          <h1 className="text-xl font-bold text-white">{t('app.title')}</h1>
         </div>
         
         <nav className="mt-8">
@@ -89,6 +92,7 @@ export function Layout() {
             </div>
             
             <div className="flex items-center space-x-4">
+              <LanguageSwitcher />
               <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
                 <Settings className="w-5 h-5" />
               </button>
@@ -105,7 +109,7 @@ export function Layout() {
                 <button
                   onClick={handleLogout}
                   className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-                  title="Logout"
+                  title={t('app.logout')}
                 >
                   <LogOut className="w-5 h-5" />
                 </button>

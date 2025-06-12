@@ -1,15 +1,16 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { AccountModel, ACCOUNT_TYPES, ACCOUNT_INDUSTRIES } from '../../types'
+import type { OrganizationModel } from '../../types'
+import { ORGANIZATION_TYPES, ORGANIZATION_INDUSTRIES } from '../../types'
 import { Modal, ModalBody, ModalFooter } from '../ui/Modal'
-import { useCreateAccount, useUpdateAccount } from '../../hooks/useApi'
+import { useCreateOrganization, useUpdateOrganization } from '../../hooks/useApi'
 import { useToastContext } from '../../context/ToastContext'
 import { useEffect } from 'react'
 import clsx from 'clsx'
 
-const accountSchema = z.object({
-  name: z.string().min(1, 'Company name is required'),
+const organizationSchema = z.object({
+  name: z.string().min(1, 'Organization name is required'),
   website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   industry: z.string().optional(),
   type: z.string().optional(),
@@ -30,42 +31,42 @@ const accountSchema = z.object({
   number_of_employees: z.coerce.number().int().positive('Number of employees must be positive').optional(),
 })
 
-type AccountFormData = z.infer<typeof accountSchema>
+type OrganizationFormData = z.infer<typeof organizationSchema>
 
-interface AccountFormProps {
+interface OrganizationFormProps {
   isOpen: boolean
   onClose: () => void
-  account?: AccountModel
+  organization?: OrganizationModel
   mode: 'create' | 'edit'
 }
 
-export function AccountForm({ isOpen, onClose, account, mode }: AccountFormProps) {
+export function OrganizationForm({ isOpen, onClose, organization, mode }: OrganizationFormProps) {
   const toast = useToastContext()
   
-  const createAccountMutation = useCreateAccount({
+  const createOrganizationMutation = useCreateOrganization({
     onSuccess: (data) => {
-      toast.success('Account created successfully', {
+      toast.success('Organization created successfully', {
         description: `${data.name} has been added to your CRM`,
       })
       onClose()
       reset()
     },
     onError: (error) => {
-      toast.error('Failed to create account', {
+      toast.error('Failed to create organization', {
         description: error.message,
       })
     },
   })
 
-  const updateAccountMutation = useUpdateAccount({
+  const updateOrganizationMutation = useUpdateOrganization({
     onSuccess: (data) => {
-      toast.success('Account updated successfully', {
+      toast.success('Organization updated successfully', {
         description: `${data.name} has been updated`,
       })
       onClose()
     },
     onError: (error) => {
-      toast.error('Failed to update account', {
+      toast.error('Failed to update organization', {
         description: error.message,
       })
     },
@@ -77,44 +78,44 @@ export function AccountForm({ isOpen, onClose, account, mode }: AccountFormProps
     formState: { errors, isSubmitting },
     reset,
     setValue,
-  } = useForm<AccountFormData>({
-    resolver: zodResolver(accountSchema),
+  } = useForm<OrganizationFormData>({
+    resolver: zodResolver(organizationSchema),
   })
 
   // Populate form when editing
   useEffect(() => {
-    if (mode === 'edit' && account) {
-      const formData: Partial<AccountFormData> = {
-        name: account.name,
-        website: account.website || '',
-        industry: account.industry || '',
-        type: account.type || '',
-        phone_number: account.phone_number || '',
-        email_address: account.email_address || '',
-        billing_address_street: account.billing_address_street || '',
-        billing_address_city: account.billing_address_city || '',
-        billing_address_state: account.billing_address_state || '',
-        billing_address_postal_code: account.billing_address_postal_code || '',
-        billing_address_country: account.billing_address_country || '',
-        shipping_address_street: account.shipping_address_street || '',
-        shipping_address_city: account.shipping_address_city || '',
-        shipping_address_state: account.shipping_address_state || '',
-        shipping_address_postal_code: account.shipping_address_postal_code || '',
-        shipping_address_country: account.shipping_address_country || '',
-        description: account.description || '',
-        annual_revenue: account.annual_revenue || undefined,
-        number_of_employees: account.number_of_employees || undefined,
+    if (mode === 'edit' && organization) {
+      const formData: Partial<OrganizationFormData> = {
+        name: organization.name,
+        website: organization.website || '',
+        industry: organization.industry || '',
+        type: organization.type || '',
+        phone_number: organization.phone_number || '',
+        email_address: organization.email_address || '',
+        billing_address_street: organization.billing_address_street || '',
+        billing_address_city: organization.billing_address_city || '',
+        billing_address_state: organization.billing_address_state || '',
+        billing_address_postal_code: organization.billing_address_postal_code || '',
+        billing_address_country: organization.billing_address_country || '',
+        shipping_address_street: organization.shipping_address_street || '',
+        shipping_address_city: organization.shipping_address_city || '',
+        shipping_address_state: organization.shipping_address_state || '',
+        shipping_address_postal_code: organization.shipping_address_postal_code || '',
+        shipping_address_country: organization.shipping_address_country || '',
+        description: organization.description || '',
+        annual_revenue: organization.annual_revenue || undefined,
+        number_of_employees: organization.number_of_employees || undefined,
       }
 
       Object.entries(formData).forEach(([key, value]) => {
-        setValue(key as keyof AccountFormData, value)
+        setValue(key as keyof OrganizationFormData, value)
       })
     } else if (mode === 'create') {
       reset()
     }
-  }, [account, mode, setValue, reset])
+  }, [organization, mode, setValue, reset])
 
-  const onSubmit = (data: AccountFormData) => {
+  const onSubmit = (data: OrganizationFormData) => {
     const cleanedData = {
       ...data,
       website: data.website || undefined,
@@ -124,22 +125,22 @@ export function AccountForm({ isOpen, onClose, account, mode }: AccountFormProps
     }
 
     if (mode === 'create') {
-      createAccountMutation.mutate(cleanedData)
-    } else if (mode === 'edit' && account) {
-      updateAccountMutation.mutate({ 
-        id: account.id, 
+      createOrganizationMutation.mutate(cleanedData)
+    } else if (mode === 'edit' && organization) {
+      updateOrganizationMutation.mutate({ 
+        id: organization.id, 
         data: cleanedData 
       })
     }
   }
 
-  const isLoading = createAccountMutation.isPending || updateAccountMutation.isPending
+  const isLoading = createOrganizationMutation.isPending || updateOrganizationMutation.isPending
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={mode === 'create' ? 'Create New Account' : 'Edit Account'}
+      title={mode === 'create' ? 'Create New Organization' : 'Edit Organization'}
       size="xl"
       closeOnOutsideClick={!isLoading}
     >
@@ -151,13 +152,13 @@ export function AccountForm({ isOpen, onClose, account, mode }: AccountFormProps
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Company Name *
+                  Organization Name *
                 </label>
                 <input
                   {...register('name')}
                   type="text"
                   className={clsx('input', errors.name && 'border-red-300')}
-                  placeholder="Enter company name"
+                  placeholder="Enter organization name"
                 />
                 {errors.name && (
                   <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -181,11 +182,11 @@ export function AccountForm({ isOpen, onClose, account, mode }: AccountFormProps
 
               <div>
                 <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-                  Account Type
+                  Organization Type
                 </label>
                 <select {...register('type')} className="input">
                   <option value="">Select type</option>
-                  {ACCOUNT_TYPES.map((type) => (
+                  {ORGANIZATION_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
                       {type.label}
                     </option>
@@ -199,7 +200,7 @@ export function AccountForm({ isOpen, onClose, account, mode }: AccountFormProps
                 </label>
                 <select {...register('industry')} className="input">
                   <option value="">Select industry</option>
-                  {ACCOUNT_INDUSTRIES.map((industry) => (
+                  {ORGANIZATION_INDUSTRIES.map((industry) => (
                     <option key={industry.value} value={industry.value}>
                       {industry.label}
                     </option>
@@ -233,7 +234,7 @@ export function AccountForm({ isOpen, onClose, account, mode }: AccountFormProps
                   {...register('email_address')}
                   type="email"
                   className={clsx('input', errors.email_address && 'border-red-300')}
-                  placeholder="contact@company.com"
+                  placeholder="contact@organization.com"
                 />
                 {errors.email_address && (
                   <p className="mt-1 text-sm text-red-600">{errors.email_address.message}</p>
@@ -242,9 +243,9 @@ export function AccountForm({ isOpen, onClose, account, mode }: AccountFormProps
             </div>
           </div>
 
-          {/* Company Details */}
+          {/* Organization Details */}
           <div>
-            <h4 className="text-lg font-medium text-gray-900 mb-4">Company Details</h4>
+            <h4 className="text-lg font-medium text-gray-900 mb-4">Organization Details</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="annual_revenue" className="block text-sm font-medium text-gray-700 mb-1">
@@ -353,7 +354,7 @@ export function AccountForm({ isOpen, onClose, account, mode }: AccountFormProps
               {...register('description')}
               rows={4}
               className="input resize-none"
-              placeholder="Add notes about this account..."
+              placeholder="Add notes about this organization..."
             />
           </div>
         </ModalBody>
@@ -372,7 +373,7 @@ export function AccountForm({ isOpen, onClose, account, mode }: AccountFormProps
             className="btn-primary px-6 py-2"
             disabled={isLoading}
           >
-            {isLoading ? 'Saving...' : mode === 'create' ? 'Create Account' : 'Update Account'}
+            {isLoading ? 'Saving...' : mode === 'create' ? 'Create Organization' : 'Update Organization'}
           </button>
         </ModalFooter>
       </form>

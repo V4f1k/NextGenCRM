@@ -1,9 +1,10 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { TaskModel, TASK_STATUSES, TASK_PRIORITIES } from '../../types'
+import type { TaskModel } from '../../types'
+import { TASK_STATUSES, TASK_PRIORITIES } from '../../types'
 import { Modal, ModalBody, ModalFooter } from '../ui/Modal'
-import { useCreateTask, useUpdateTask, useAccounts, useContacts, useOpportunities } from '../../hooks/useApi'
+import { useCreateTask, useUpdateTask, useOrganizations, useContacts, useOpportunities } from '../../hooks/useApi'
 import { useToastContext } from '../../context/ToastContext'
 import { useEffect, useState } from 'react'
 import clsx from 'clsx'
@@ -13,7 +14,7 @@ const taskSchema = z.object({
   status: z.string().optional(),
   priority: z.string().optional(),
   date_start: z.string().optional(),
-  date_due: z.string().optional(),
+  date_end: z.string().optional(),
   parent_type: z.string().optional(),
   parent_id: z.string().optional(),
   description: z.string().optional(),
@@ -71,7 +72,7 @@ export function TaskForm({
   })
 
   // Fetch related entities for parent selection
-  const { data: accountsData } = useAccounts()
+  const { data: organizationsData } = useOrganizations()
   const { data: contactsData } = useContacts()
   const { data: opportunitiesData } = useOpportunities()
 
@@ -106,8 +107,8 @@ export function TaskForm({
         name: task.name,
         status: task.status || 'not_started',
         priority: task.priority || 'medium',
-        date_start: task.date_start || '',
-        date_due: task.date_due || '',
+        date_start: task.date_start ? new Date(task.date_start).toISOString().slice(0, 16) : '',
+        date_end: task.date_end ? new Date(task.date_end).toISOString().slice(0, 16) : '',
         parent_type: task.parent_type || '',
         parent_id: task.parent_id || '',
         description: task.description || '',
@@ -134,7 +135,7 @@ export function TaskForm({
       parent_type: data.parent_type || undefined,
       parent_id: data.parent_id || undefined,
       date_start: data.date_start || undefined,
-      date_due: data.date_due || undefined,
+      date_end: data.date_end || undefined,
     }
 
     if (mode === 'create') {
@@ -171,10 +172,10 @@ export function TaskForm({
 
   const getParentOptions = () => {
     switch (selectedParentType) {
-      case 'Account':
-        return accountsData?.results?.map(account => ({
-          id: account.id,
-          name: account.name
+      case 'Organization':
+        return organizationsData?.results?.map(account => ({
+          id: organization.id,
+          name: organization.name
         })) || []
       case 'Contact':
         return contactsData?.results?.map(contact => ({
@@ -283,11 +284,11 @@ export function TaskForm({
               </div>
 
               <div>
-                <label htmlFor="date_due" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="date_end" className="block text-sm font-medium text-gray-700 mb-1">
                   Due Date & Time
                 </label>
                 <input
-                  {...register('date_due')}
+                  {...register('date_end')}
                   type="datetime-local"
                   className="input"
                 />
@@ -313,7 +314,7 @@ export function TaskForm({
                   }}
                 >
                   <option value="">Select type</option>
-                  <option value="Account">Account</option>
+                  <option value="Organization">Organization</option>
                   <option value="Contact">Contact</option>
                   <option value="Opportunity">Opportunity</option>
                 </select>

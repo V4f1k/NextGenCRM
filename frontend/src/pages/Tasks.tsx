@@ -1,13 +1,17 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Filter, Edit, Trash2, CheckSquare, Clock, AlertCircle, Building2, User, DollarSign } from 'lucide-react'
 import { useTasks, useDeleteTask, useAccounts, useContacts, useOpportunities } from '../hooks/useApi'
-import { TaskModel, TaskFilters, TASK_STATUSES, TASK_PRIORITIES } from '../types'
+import type { TaskModel, TaskFilters } from '../types'
+import { TASK_STATUSES, TASK_PRIORITIES } from '../types'
 import { TaskForm } from '../components/forms/TaskForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { DataTable, Column } from '../components/ui/DataTable'
+import { DataTable } from '../components/ui/DataTable'
+import type { Column } from '../components/ui/DataTable'
 import { useToastContext } from '../context/ToastContext'
 
 export function Tasks() {
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<TaskFilters>({})
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -399,7 +403,7 @@ export function Tasks() {
           onSortChange: handleSortChange,
         }}
         onRowClick={(task) => {
-          console.log('Row clicked:', task)
+          navigate(`/tasks/${task.id}`)
         }}
       />
 

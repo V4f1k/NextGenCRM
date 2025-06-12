@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { Plus, Search, Filter, Edit, Trash2, DollarSign, TrendingUp, Calendar, Building2, User } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useOpportunities, useDeleteOpportunity, useAccounts, useContacts } from '../hooks/useApi'
-import { OpportunityModel, OpportunityFilters, OPPORTUNITY_STAGES } from '../types'
+import type { OpportunityModel, OpportunityFilters } from '../types'
+import { OPPORTUNITY_STAGES } from '../types'
 import { OpportunityForm } from '../components/forms/OpportunityForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { DataTable, Column } from '../components/ui/DataTable'
+import { DataTable } from '../components/ui/DataTable'
+import type { Column } from '../components/ui/DataTable'
 import { useToastContext } from '../context/ToastContext'
 
 export function Opportunities() {
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<OpportunityFilters>({})
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -430,7 +434,7 @@ export function Opportunities() {
             onSortChange: handleSortChange,
           }}
           onRowClick={(opportunity) => {
-            console.log('Row clicked:', opportunity)
+            navigate(`/opportunities/${opportunity.id}`)
           }}
         />
       )}

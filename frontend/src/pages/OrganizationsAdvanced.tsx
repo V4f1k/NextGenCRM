@@ -1,19 +1,24 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Filter, Edit, Trash2, Building2 } from 'lucide-react'
-import { useAccounts, useDeleteAccount } from '../hooks/useApi'
-import { AccountModel, AccountFilters } from '../types'
-import { AccountForm } from '../components/forms/AccountForm'
+import { useOrganizations, useDeleteOrganization } from '../hooks/useApi'
+import type { OrganizationModel, OrganizationFilters } from '../types'
+import { OrganizationForm } from '../components/forms/OrganizationForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { DataTable, Column } from '../components/ui/DataTable'
+import { DataTable } from '../components/ui/DataTable'
+import type { Column } from '../components/ui/DataTable'
 import { useToastContext } from '../context/ToastContext'
+import { useTranslation } from 'react-i18next'
 
-export function AccountsAdvanced() {
+export function OrganizationsAdvanced() {
+  const navigate = useNavigate()
+  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
-  const [filters, setFilters] = useState<AccountFilters>({})
+  const [filters, setFilters] = useState<OrganizationFilters>({})
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create')
-  const [selectedAccount, setSelectedAccount] = useState<AccountModel | undefined>()
-  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; account?: AccountModel }>({ isOpen: false })
+  const [selectedOrganization, setSelectedOrganization] = useState<OrganizationModel | undefined>()
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; organization?: OrganizationModel }>({ isOpen: false })
   const [sorting, setSorting] = useState<{ field: string | null; direction: 'asc' | 'desc' | null }>({
     field: null,
     direction: null,
@@ -28,14 +33,14 @@ export function AccountsAdvanced() {
     ...(sorting.field && sorting.direction && { ordering: `${sorting.direction === 'desc' ? '-' : ''}${sorting.field}` }),
   }
   
-  const { data, isLoading, error, refetch } = useAccounts(queryFilters)
-  const deleteAccountMutation = useDeleteAccount({
+  const { data, isLoading, error, refetch } = useOrganizations(queryFilters)
+  const deleteOrganizationMutation = useDeleteOrganization({
     onSuccess: () => {
-      toast.success('Account deleted successfully')
+      toast.success('Organization deleted successfully')
       setDeleteDialog({ isOpen: false })
     },
     onError: (error) => {
-      toast.error('Failed to delete account', {
+      toast.error('Failed to delete organization', {
         description: error.message,
       })
     },
@@ -65,25 +70,25 @@ export function AccountsAdvanced() {
     setSearchTerm(e.target.value)
   }
 
-  const handleCreateAccount = () => {
+  const handleCreateOrganization = () => {
     setFormMode('create')
-    setSelectedAccount(undefined)
+    setSelectedOrganization(undefined)
     setIsFormOpen(true)
   }
 
-  const handleEditAccount = (account: AccountModel) => {
+  const handleEditOrganization = (organization: OrganizationModel) => {
     setFormMode('edit')
-    setSelectedAccount(account)
+    setSelectedOrganization(organization)
     setIsFormOpen(true)
   }
 
-  const handleDeleteAccount = (account: AccountModel) => {
-    setDeleteDialog({ isOpen: true, account })
+  const handleDeleteOrganization = (organization: OrganizationModel) => {
+    setDeleteDialog({ isOpen: true, organization })
   }
 
   const confirmDelete = () => {
-    if (deleteDialog.account) {
-      deleteAccountMutation.mutate(deleteDialog.account.id)
+    if (deleteDialog.organization) {
+      deleteOrganizationMutation.mutate(deleteDialog.organization.id)
     }
   }
 
@@ -91,15 +96,15 @@ export function AccountsAdvanced() {
     setSorting({ field, direction })
   }
 
-  const columns: Column<AccountModel>[] = [
+  const columns: Column<OrganizationModel>[] = [
     {
       key: 'name',
-      header: 'Company',
+      header: 'Organization',
       sortable: true,
-      render: (value, account) => (
+      render: (value, organization) => (
         <div>
-          <div className="text-sm font-medium text-gray-900">{account.name}</div>
-          <div className="text-sm text-gray-500">{account.website || 'No website'}</div>
+          <div className="text-sm font-medium text-gray-900">{organization.name}</div>
+          <div className="text-sm text-gray-500">{organization.website || 'No website'}</div>
         </div>
       ),
     },
@@ -128,10 +133,10 @@ export function AccountsAdvanced() {
     {
       key: 'email_address',
       header: 'Contact',
-      render: (value, account) => (
+      render: (value, organization) => (
         <div>
-          <div className="text-sm text-gray-900">{account.email_address || 'No email'}</div>
-          <div className="text-sm text-gray-500">{account.phone_number || 'No phone'}</div>
+          <div className="text-sm text-gray-900">{organization.email_address || 'No email'}</div>
+          <div className="text-sm text-gray-500">{organization.phone_number || 'No phone'}</div>
         </div>
       ),
     },
@@ -161,26 +166,26 @@ export function AccountsAdvanced() {
     {
       key: 'actions',
       header: 'Actions',
-      render: (_, account) => (
+      render: (_, organization) => (
         <div className="flex items-center justify-end gap-2">
           <button 
             className="text-primary-600 hover:text-primary-900 p-1"
-            title="Edit account"
+            title="Edit organization"
             onClick={(e) => {
               e.stopPropagation()
-              handleEditAccount(account)
+              handleEditOrganization(organization)
             }}
           >
             <Edit className="w-4 h-4" />
           </button>
           <button 
             className="text-red-600 hover:text-red-900 p-1"
-            title="Delete account"
+            title="Delete organization"
             onClick={(e) => {
               e.stopPropagation()
-              handleDeleteAccount(account)
+              handleDeleteOrganization(organization)
             }}
-            disabled={deleteAccountMutation.isPending}
+            disabled={deleteOrganizationMutation.isPending}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -192,13 +197,13 @@ export function AccountsAdvanced() {
   const emptyState = (
     <div className="text-center py-12">
       <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 mb-2">No accounts found</h3>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">{t('organizations.noOrganizations')}</h3>
       <p className="text-gray-500 mb-6">
-        {searchTerm ? 'Try adjusting your search criteria.' : 'Get started by creating your first account.'}
+        {searchTerm ? t('common.noData') : t('organizations.createFirst')}
       </p>
-      <button className="btn-primary px-6 py-2" onClick={handleCreateAccount}>
+      <button className="btn-primary px-6 py-2" onClick={handleCreateOrganization}>
         <Plus className="w-4 h-4 mr-2" />
-        Create Account
+        {t('organizations.newOrganization')}
       </button>
     </div>
   )
@@ -208,14 +213,14 @@ export function AccountsAdvanced() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Accounts</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('organizations.title')}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage your business accounts and organizations
+            {t('organizations.subtitle')}
           </p>
         </div>
-        <button className="btn-primary px-4 py-2" onClick={handleCreateAccount}>
+        <button className="btn-primary px-4 py-2" onClick={handleCreateOrganization}>
           <Plus className="w-4 h-4 mr-2" />
-          New Account
+          {t('organizations.newOrganization')}
         </button>
       </div>
 
@@ -227,7 +232,7 @@ export function AccountsAdvanced() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search accounts..."
+                placeholder={t('organizations.searchPlaceholder')}
                 className="input pl-10"
                 value={searchTerm}
                 onChange={handleSearch}
@@ -237,7 +242,7 @@ export function AccountsAdvanced() {
           <div className="flex gap-2">
             <button className="btn-outline px-4 py-2">
               <Filter className="w-4 h-4 mr-2" />
-              Filter
+              {t('common.filter')}
             </button>
           </div>
         </div>
@@ -255,17 +260,16 @@ export function AccountsAdvanced() {
           direction: sorting.direction,
           onSortChange: handleSortChange,
         }}
-        onRowClick={(account) => {
-          // Optional: Navigate to account detail page
-          console.log('Row clicked:', account)
+        onRowClick={(organization) => {
+          navigate(`/organizations/${organization.id}`)
         }}
       />
 
-      {/* Account Form Modal */}
-      <AccountForm
+      {/* Organization Form Modal */}
+      <OrganizationForm
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
-        account={selectedAccount}
+        organization={selectedOrganization}
         mode={formMode}
       />
 
@@ -274,11 +278,11 @@ export function AccountsAdvanced() {
         isOpen={deleteDialog.isOpen}
         onClose={() => setDeleteDialog({ isOpen: false })}
         onConfirm={confirmDelete}
-        title="Delete Account"
-        description={`Are you sure you want to delete "${deleteDialog.account?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
+        title={t('common.delete') + ' ' + t('entities.organization')}
+        description={t('common.confirmDelete')}
+        confirmText={t('common.delete')}
         type="danger"
-        isLoading={deleteAccountMutation.isPending}
+        isLoading={deleteOrganizationMutation.isPending}
       />
     </div>
   )

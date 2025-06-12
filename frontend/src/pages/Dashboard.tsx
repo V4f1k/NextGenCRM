@@ -1,10 +1,12 @@
 import { Building2, Users, UserPlus, Target, AlertCircle, Loader2, Clock } from 'lucide-react'
 import { useDashboardStats, useRecentActivities } from '../hooks/useApi'
 import { formatDistanceToNow } from 'date-fns'
+import { cs } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
 
 const getStatColor = (type: string) => {
   switch (type) {
-    case 'accounts': return 'bg-blue-500'
+    case 'organizations': return 'bg-blue-500'
     case 'contacts': return 'bg-green-500'
     case 'leads': return 'bg-yellow-500'
     case 'opportunities': return 'bg-purple-500'
@@ -16,7 +18,7 @@ const getStatColor = (type: string) => {
 
 const getActivityColor = (type: string) => {
   switch (type) {
-    case 'Account': return 'bg-blue-400'
+    case 'Organization': return 'bg-blue-400'
     case 'Contact': return 'bg-green-400'
     case 'Lead': return 'bg-yellow-400'
     case 'Opportunity': return 'bg-purple-400'
@@ -27,6 +29,7 @@ const getActivityColor = (type: string) => {
 }
 
 export function Dashboard() {
+  const { t, i18n } = useTranslation()
   const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats()
   const { data: activities, isLoading: activitiesLoading, error: activitiesError } = useRecentActivities(10)
 
@@ -42,9 +45,9 @@ export function Dashboard() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Welcome to NextGenCRM - Your modern CRM solution
+          {t('dashboard.welcome', { name: 'Admin' })}
         </p>
       </div>
 
@@ -65,19 +68,19 @@ export function Dashboard() {
         ) : statsError ? (
           <div className="col-span-full card p-6 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-2" />
-            <p className="text-red-600">Failed to load dashboard statistics</p>
+            <p className="text-red-600">{t('dashboard.error')}</p>
           </div>
         ) : stats ? (
           <>
             <div className="card p-6">
               <div className="flex items-center">
-                <div className={`p-3 rounded-md ${getStatColor('accounts')}`}>
+                <div className={`p-3 rounded-md ${getStatColor('organizations')}`}>
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Total Accounts</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.accounts.total}</p>
-                  <p className="text-xs text-green-600">+{stats.accounts.recent} this month</p>
+                  <p className="text-sm font-medium text-gray-500">{t('dashboard.stats.organizations')}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.organizations?.total || stats.accounts?.total || 0}</p>
+                  <p className="text-xs text-green-600">+{stats.organizations?.recent || stats.accounts?.recent || 0} this month</p>
                 </div>
               </div>
             </div>
@@ -88,9 +91,9 @@ export function Dashboard() {
                   <Users className="w-6 h-6 text-white" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Total Contacts</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.contacts.total}</p>
-                  <p className="text-xs text-green-600">+{stats.contacts.recent} this month</p>
+                  <p className="text-sm font-medium text-gray-500">{t('dashboard.stats.contacts')}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.contacts?.total || 0}</p>
+                  <p className="text-xs text-green-600">+{stats.contacts?.recent || 0} this month</p>
                 </div>
               </div>
             </div>
@@ -101,9 +104,9 @@ export function Dashboard() {
                   <UserPlus className="w-6 h-6 text-white" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Active Leads</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.leads.new + stats.leads.qualified}</p>
-                  <p className="text-xs text-blue-600">{stats.leads.converted} converted</p>
+                  <p className="text-sm font-medium text-gray-500">{t('dashboard.stats.leads')}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{(stats.leads?.new || 0) + (stats.leads?.qualified || 0)}</p>
+                  <p className="text-xs text-blue-600">{stats.leads?.converted || 0} converted</p>
                 </div>
               </div>
             </div>
@@ -114,9 +117,9 @@ export function Dashboard() {
                   <Target className="w-6 h-6 text-white" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Open Opportunities</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.opportunities.open}</p>
-                  <p className="text-xs text-green-600">{formatCurrency(stats.opportunities.total_amount)}</p>
+                  <p className="text-sm font-medium text-gray-500">{t('dashboard.stats.opportunities')}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.opportunities?.open || 0}</p>
+                  <p className="text-xs text-green-600">{formatCurrency(stats.opportunities?.total_amount || 0)}</p>
                 </div>
               </div>
             </div>
@@ -129,8 +132,8 @@ export function Dashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Pending Tasks</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.tasks.pending + stats.tasks.in_progress}</p>
-                  <p className="text-xs text-red-600">{stats.tasks.overdue} overdue</p>
+                  <p className="text-2xl font-semibold text-gray-900">{(stats.tasks?.pending || 0) + (stats.tasks?.in_progress || 0)}</p>
+                  <p className="text-xs text-red-600">{stats.tasks?.overdue || 0} overdue</p>
                 </div>
               </div>
             </div>
@@ -142,8 +145,8 @@ export function Dashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Won Deals</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.opportunities.won}</p>
-                  <p className="text-xs text-green-600">{formatCurrency(stats.opportunities.won_amount)}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.opportunities?.won || 0}</p>
+                  <p className="text-xs text-green-600">{formatCurrency(stats.opportunities?.won_amount || 0)}</p>
                 </div>
               </div>
             </div>
@@ -155,8 +158,8 @@ export function Dashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Completed Tasks</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.tasks.completed}</p>
-                  <p className="text-xs text-blue-600">{stats.tasks.total} total</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.tasks?.completed || 0}</p>
+                  <p className="text-xs text-blue-600">{stats.tasks?.total || 0} total</p>
                 </div>
               </div>
             </div>
@@ -167,9 +170,9 @@ export function Dashboard() {
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Calls Held</p>
+                  <p className="text-sm font-medium text-gray-500">{t('dashboard.stats.callsHeld')}</p>
                   <p className="text-2xl font-semibold text-gray-900">{stats.calls.held}</p>
-                  <p className="text-xs text-green-600">{stats.calls.planned} planned</p>
+                  <p className="text-xs text-green-600">{t('dashboard.stats.planned', { count: stats.calls.planned })}</p>
                 </div>
               </div>
             </div>
@@ -180,7 +183,7 @@ export function Dashboard() {
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activities</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">{t('dashboard.recentActivity')}</h3>
           <div className="space-y-4">
             {activitiesLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -189,26 +192,26 @@ export function Dashboard() {
             ) : activitiesError ? (
               <div className="text-center py-8">
                 <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                <p className="text-red-600 text-sm">Failed to load recent activities</p>
+                <p className="text-red-600 text-sm">{t('dashboard.error')}</p>
               </div>
             ) : activities && activities.length > 0 ? (
               activities.map((activity, index) => (
                 <div key={`${activity.type}-${activity.id}-${index}`} className="flex items-center space-x-3">
                   <div className={`w-2 h-2 ${getActivityColor(activity.type)} rounded-full`}></div>
                   <p className="text-sm text-gray-600 flex-1">
-                    New {activity.type.toLowerCase()} "{activity.name}" created
-                    {activity.created_by && (
-                      <span className="text-gray-500"> by {activity.created_by}</span>
-                    )}
+                    {activity.created_by || 'User'} {t('dashboard.createdNew')} {activity.type.toLowerCase()}: {activity.name}
                   </p>
                   <span className="text-xs text-gray-400">
-                    {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(activity.created_at), { 
+                      addSuffix: true,
+                      locale: i18n.language === 'cs' ? cs : undefined
+                    })}
                   </span>
                 </div>
               ))
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-500 text-sm">No recent activities</p>
+                <p className="text-gray-500 text-sm">{t('dashboard.noActivity')}</p>
               </div>
             )}
           </div>
@@ -218,13 +221,13 @@ export function Dashboard() {
           <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-3">
             <button className="btn-primary w-full text-left px-4 py-2">
-              Create New Account
+              Create New Organization
             </button>
             <button className="btn-secondary w-full text-left px-4 py-2">
-              Add Contact
+              {t('dashboard.addContact')}
             </button>
             <button className="btn-outline w-full text-left px-4 py-2">
-              Schedule Task
+              {t('dashboard.scheduleTask')}
             </button>
           </div>
         </div>

@@ -34,7 +34,7 @@ export interface UserModel extends BaseModel {
   roles?: string[];
 }
 
-export interface AccountModel extends BaseModel {
+export interface OrganizationModel extends BaseModel {
   name: string;
   website?: string;
   industry?: string;
@@ -71,8 +71,8 @@ export interface ContactModel extends BaseModel {
   first_name: string;
   last_name: string;
   full_name?: string;
-  account?: string;
-  account_name?: string;
+  organization?: string;
+  organization_name?: string;
   title?: string;
   department?: string;
   email_address?: string;
@@ -105,7 +105,7 @@ export interface LeadModel extends BaseModel {
   first_name: string;
   last_name: string;
   full_name?: string;
-  account_name?: string;
+  organization_name?: string;
   title?: string;
   website?: string;
   email_address?: string;
@@ -136,8 +136,8 @@ export interface LeadModel extends BaseModel {
 
 export interface OpportunityModel extends BaseModel {
   name: string;
-  account?: string;
-  account_name?: string;
+  organization?: string;
+  organization_name?: string;
   stage?: string;
   amount?: number;
   probability?: number;
@@ -166,7 +166,7 @@ export interface TaskModel extends BaseModel {
   description?: string;
   parent_type?: string;
   parent_id?: string;
-  account?: string;
+  organization?: string;
   contact?: string;
   created_by?: string;
   modified_by?: string;
@@ -186,7 +186,7 @@ export interface CallModel extends BaseModel {
   description?: string;
   parent_type?: string;
   parent_id?: string;
-  account?: string;
+  organization?: string;
   created_by?: string;
   modified_by?: string;
   assigned_user?: string;
@@ -242,7 +242,7 @@ export interface APIError {
 
 // Dashboard types
 export interface DashboardStats {
-  accounts: {
+  organizations: {
     total: number;
     recent: number;
   };
@@ -297,7 +297,7 @@ export interface BaseFilters {
   assigned_team?: string;
 }
 
-export interface AccountFilters extends BaseFilters {
+export interface OrganizationFilters extends BaseFilters {
   name?: string;
   type?: string;
   industry?: string;
@@ -307,7 +307,7 @@ export interface AccountFilters extends BaseFilters {
 export interface ContactFilters extends BaseFilters {
   first_name?: string;
   last_name?: string;
-  account?: string;
+  organization?: string;
   title?: string;
   department?: string;
 }
@@ -324,7 +324,7 @@ export interface LeadFilters extends BaseFilters {
 export interface OpportunityFilters extends BaseFilters {
   name?: string;
   stage?: string;
-  account?: string;
+  organization?: string;
   amount_gte?: number;
   amount_lte?: number;
   probability_gte?: number;
@@ -356,14 +356,14 @@ export interface CallFilters extends BaseFilters {
 }
 
 // Choice constants (matching Django model choices)
-export const ACCOUNT_TYPES = [
+export const ORGANIZATION_TYPES = [
   { value: 'customer', label: 'Customer' },
   { value: 'investor', label: 'Investor' },
   { value: 'partner', label: 'Partner' },
   { value: 'reseller', label: 'Reseller' }
 ] as const;
 
-export const ACCOUNT_INDUSTRIES = [
+export const ORGANIZATION_INDUSTRIES = [
   { value: 'agriculture', label: 'Agriculture' },
   { value: 'apparel', label: 'Apparel' },
   { value: 'banking', label: 'Banking' },
@@ -468,7 +468,33 @@ export const CONTACT_SALUTATIONS = [
   { value: 'prof', label: 'Prof.' }
 ] as const;
 
+export const LEAD_INDUSTRIES = [
+  { value: 'agriculture', label: 'Agriculture' },
+  { value: 'automotive', label: 'Automotive' },
+  { value: 'banking', label: 'Banking' },
+  { value: 'construction', label: 'Construction' },
+  { value: 'consulting', label: 'Consulting' },
+  { value: 'education', label: 'Education' },
+  { value: 'electronics', label: 'Electronics' },
+  { value: 'energy', label: 'Energy' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'hospitality', label: 'Hospitality' },
+  { value: 'insurance', label: 'Insurance' },
+  { value: 'manufacturing', label: 'Manufacturing' },
+  { value: 'media', label: 'Media' },
+  { value: 'nonprofit', label: 'Non-profit' },
+  { value: 'real_estate', label: 'Real Estate' },
+  { value: 'retail', label: 'Retail' },
+  { value: 'technology', label: 'Technology' },
+  { value: 'telecommunications', label: 'Telecommunications' },
+  { value: 'transportation', label: 'Transportation' },
+  { value: 'other', label: 'Other' }
+] as const;
+
 export const OPPORTUNITY_TYPES = [
   { value: 'existing_business', label: 'Existing Business' },
   { value: 'new_business', label: 'New Business' }
 ] as const;
+
+// Remove re-exports to avoid conflicts - using direct exports only

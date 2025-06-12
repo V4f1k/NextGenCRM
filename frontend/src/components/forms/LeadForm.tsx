@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { LeadModel, LEAD_STATUSES, LEAD_SOURCES, CONTACT_SALUTATIONS } from '../../types'
+import type { LeadModel } from '../../types'
+import { LEAD_STATUSES, LEAD_SOURCES, CONTACT_SALUTATIONS, LEAD_INDUSTRIES } from '../../types'
 import { Modal, ModalBody, ModalFooter } from '../ui/Modal'
 import { useCreateLead, useUpdateLead } from '../../hooks/useApi'
 import { useToastContext } from '../../context/ToastContext'
@@ -11,14 +12,13 @@ import clsx from 'clsx'
 const leadSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
-  salutation: z.string().optional(),
+  salutation_name: z.string().optional(),
   title: z.string().optional(),
-  company: z.string().optional(),
+  account_name: z.string().optional(),
   website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   industry: z.string().optional(),
   email_address: z.string().email('Please enter a valid email').optional().or(z.literal('')),
   phone_number: z.string().optional(),
-  mobile_phone: z.string().optional(),
   status: z.string().optional(),
   source: z.string().optional(),
   do_not_call: z.boolean().default(false),
@@ -92,14 +92,13 @@ export function LeadForm({ isOpen, onClose, lead, mode }: LeadFormProps) {
       const formData: Partial<LeadFormData> = {
         first_name: lead.first_name,
         last_name: lead.last_name,
-        salutation: lead.salutation || '',
+        salutation_name: lead.salutation_name || '',
         title: lead.title || '',
-        company: lead.company || '',
+        account_name: lead.account_name || '',
         website: lead.website || '',
         industry: lead.industry || '',
         email_address: lead.email_address || '',
         phone_number: lead.phone_number || '',
-        mobile_phone: lead.mobile_phone || '',
         status: lead.status || 'new',
         source: lead.source || '',
         do_not_call: lead.do_not_call || false,
@@ -166,10 +165,10 @@ export function LeadForm({ isOpen, onClose, lead, mode }: LeadFormProps) {
             <h4 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="salutation" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="salutation_name" className="block text-sm font-medium text-gray-700 mb-1">
                   Salutation
                 </label>
-                <select {...register('salutation')} className="input">
+                <select {...register('salutation_name')} className="input">
                   <option value="">Select salutation</option>
                   {CONTACT_SALUTATIONS.map((salutation) => (
                     <option key={salutation.value} value={salutation.value}>
@@ -262,11 +261,11 @@ export function LeadForm({ isOpen, onClose, lead, mode }: LeadFormProps) {
             <h4 className="text-lg font-medium text-gray-900 mb-4">Company Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="account_name" className="block text-sm font-medium text-gray-700 mb-1">
                   Company Name
                 </label>
                 <input
-                  {...register('company')}
+                  {...register('account_name')}
                   type="text"
                   className="input"
                   placeholder="Company name"
@@ -292,12 +291,14 @@ export function LeadForm({ isOpen, onClose, lead, mode }: LeadFormProps) {
                 <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
                   Industry
                 </label>
-                <input
-                  {...register('industry')}
-                  type="text"
-                  className="input"
-                  placeholder="Technology, Healthcare, Finance..."
-                />
+                <select {...register('industry')} className="input">
+                  <option value="">Select industry</option>
+                  {LEAD_INDUSTRIES.map((industry) => (
+                    <option key={industry.value} value={industry.value}>
+                      {industry.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -330,18 +331,6 @@ export function LeadForm({ isOpen, onClose, lead, mode }: LeadFormProps) {
                   type="tel"
                   className="input"
                   placeholder="+1 (555) 123-4567"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="mobile_phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Mobile Phone
-                </label>
-                <input
-                  {...register('mobile_phone')}
-                  type="tel"
-                  className="input"
-                  placeholder="+1 (555) 987-6543"
                 />
               </div>
 

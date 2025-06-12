@@ -1,16 +1,17 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { OpportunityModel, OPPORTUNITY_STAGES, OPPORTUNITY_TYPES } from '../../types'
+import type { OpportunityModel } from '../../types'
+import { OPPORTUNITY_STAGES, OPPORTUNITY_TYPES } from '../../types'
 import { Modal, ModalBody, ModalFooter } from '../ui/Modal'
-import { useCreateOpportunity, useUpdateOpportunity, useAccounts, useContacts } from '../../hooks/useApi'
+import { useCreateOpportunity, useUpdateOpportunity, useOrganizations, useContacts } from '../../hooks/useApi'
 import { useToastContext } from '../../context/ToastContext'
 import { useEffect } from 'react'
 import clsx from 'clsx'
 
 const opportunitySchema = z.object({
   name: z.string().min(1, 'Opportunity name is required'),
-  account_id: z.string().optional(),
+  organization_id: z.string().optional(),
   contact_id: z.string().optional(),
   stage: z.string().optional(),
   type: z.string().optional(),
@@ -29,7 +30,7 @@ interface OpportunityFormProps {
   onClose: () => void
   opportunity?: OpportunityModel
   mode: 'create' | 'edit'
-  preselectedAccountId?: string
+  preselectedOrganizationId?: string
   preselectedContactId?: string
 }
 
@@ -38,7 +39,7 @@ export function OpportunityForm({
   onClose, 
   opportunity, 
   mode, 
-  preselectedAccountId,
+  preselectedOrganizationId,
   preselectedContactId 
 }: OpportunityFormProps) {
   const toast = useToastContext()
@@ -73,7 +74,7 @@ export function OpportunityForm({
   })
 
   // Fetch accounts and contacts for dropdowns
-  const { data: accountsData } = useAccounts()
+  const { data: organizationsData } = useOrganizations()
   const { data: contactsData } = useContacts()
 
   const {
@@ -91,13 +92,13 @@ export function OpportunityForm({
     },
   })
 
-  const selectedAccountId = watch('account_id')
+  const selectedOrganizationId = watch('organization_id')
   const currentStage = watch('stage')
   const currentProbability = watch('probability')
 
   // Filter contacts by selected account
   const filteredContacts = contactsData?.results?.filter(contact => 
-    !selectedAccountId || contact.account_id === selectedAccountId
+    !selectedOrganizationId || contact.organization_id === selectedOrganizationId
   ) || []
 
   // Populate form when editing
@@ -105,7 +106,7 @@ export function OpportunityForm({
     if (mode === 'edit' && opportunity) {
       const formData: Partial<OpportunityFormData> = {
         name: opportunity.name,
-        account_id: opportunity.account_id || '',
+        organization_id: opportunity.organization_id || '',
         contact_id: opportunity.contact_id || '',
         stage: opportunity.stage || 'prospecting',
         type: opportunity.type || '',
@@ -122,14 +123,14 @@ export function OpportunityForm({
       })
     } else if (mode === 'create') {
       reset()
-      if (preselectedAccountId) {
-        setValue('account_id', preselectedAccountId)
+      if (preselectedOrganizationId) {
+        setValue('organization_id', preselectedOrganizationId)
       }
       if (preselectedContactId) {
         setValue('contact_id', preselectedContactId)
       }
     }
-  }, [opportunity, mode, setValue, reset, preselectedAccountId, preselectedContactId])
+  }, [opportunity, mode, setValue, reset, preselectedOrganizationId, preselectedContactId])
 
   // Auto-update probability based on stage
   useEffect(() => {
@@ -157,7 +158,7 @@ export function OpportunityForm({
   const onSubmit = (data: OpportunityFormData) => {
     const cleanedData = {
       ...data,
-      account_id: data.account_id || undefined,
+      organization_id: data.organization_id || undefined,
       contact_id: data.contact_id || undefined,
       amount: data.amount || undefined,
       close_date: data.close_date || undefined,
@@ -231,14 +232,14 @@ export function OpportunityForm({
               </div>
 
               <div>
-                <label htmlFor="account_id" className="block text-sm font-medium text-gray-700 mb-1">
-                  Account
+                <label htmlFor="organization_id" className="block text-sm font-medium text-gray-700 mb-1">
+                  Organization
                 </label>
-                <select {...register('account_id')} className="input">
-                  <option value="">Select account</option>
-                  {accountsData?.results?.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.name}
+                <select {...register('organization_id')} className="input">
+                  <option value="">Select organization</option>
+                  {organizationsData?.results?.map((account) => (
+                    <option key={organization.id} value={organization.id}>
+                      {organization.name}
                     </option>
                   ))}
                 </select>
@@ -256,7 +257,7 @@ export function OpportunityForm({
                     </option>
                   ))}
                 </select>
-                {selectedAccountId && filteredContacts.length === 0 && (
+                {selectedOrganizationId && filteredContacts.length === 0 && (
                   <p className="mt-1 text-sm text-gray-500">No contacts found for selected account</p>
                 )}
               </div>

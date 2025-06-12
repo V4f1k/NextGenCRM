@@ -1,13 +1,16 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Filter, Edit, Trash2, User, Building2 } from 'lucide-react'
 import { useContacts, useDeleteContact, useAccounts } from '../hooks/useApi'
-import { ContactModel, ContactFilters } from '../types'
+import type { ContactModel, ContactFilters } from '../types'
 import { ContactForm } from '../components/forms/ContactForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { DataTable, Column } from '../components/ui/DataTable'
+import { DataTable } from '../components/ui/DataTable'
+import type { Column } from '../components/ui/DataTable'
 import { useToastContext } from '../context/ToastContext'
 
 export function Contacts() {
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<ContactFilters>({})
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -253,8 +256,7 @@ export function Contacts() {
           onSortChange: handleSortChange,
         }}
         onRowClick={(contact) => {
-          // Optional: Navigate to contact detail page
-          console.log('Row clicked:', contact)
+          navigate(`/contacts/${contact.id}`)
         }}
       />
 
