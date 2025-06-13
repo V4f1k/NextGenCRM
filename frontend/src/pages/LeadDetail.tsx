@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Edit, Trash2, User, Phone, Mail, Globe, DollarSign, ArrowRightCircle, Building2, UserPlus, Target } from 'lucide-react'
-import { useLead, useDeleteLead, useConvertLead } from '../hooks/useApi'
+import { useLead, useDeleteLead, useConvertLead, useUpdateLead } from '../hooks/useApi'
 import { DetailView } from '../components/DetailView'
 import { LeadForm } from '../components/forms/LeadForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToastContext } from '../context/ToastContext'
+import { InlineEditText, InlineEditSelect, InlineEditNumber, InlineEditEmail } from '../components/ui/InlineEdit'
 import { LEAD_STATUSES, LEAD_SOURCES, CONTACT_SALUTATIONS, LEAD_INDUSTRIES } from '../types'
+import type { LeadModel } from '../types'
 import { format } from 'date-fns'
 
 export function LeadDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { showToast } = useToastContext()
+  const toast = useToastContext()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isConvertOpen, setIsConvertOpen] = useState(false)
@@ -20,25 +22,42 @@ export function LeadDetail() {
   const { data: lead, isLoading, error } = useLead(id!)
   const deleteLeadMutation = useDeleteLead()
   const convertLeadMutation = useConvertLead()
+  const updateLeadMutation = useUpdateLead({
+    onSuccess: () => {
+      toast.success('Lead updated successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to update lead', {
+        description: error.message,
+      })
+    },
+  })
 
   const handleEdit = () => {
     setIsEditOpen(true)
   }
 
+  const updateLeadField = async (field: keyof LeadModel, value: any): Promise<void> => {
+    await updateLeadMutation.mutateAsync({
+      id: id!,
+      data: { [field]: value }
+    })
+  }
+
   const handleDelete = async () => {
     try {
       await deleteLeadMutation.mutateAsync(id!)
-      showToast('success', 'Lead deleted successfully')
+      toast.success('Lead deleted successfully')
       navigate('/leads')
     } catch (error) {
-      showToast('error', 'Failed to delete lead')
+      toast.error('Failed to delete lead')
     }
   }
 
   const handleConvert = async () => {
     try {
       const result = await convertLeadMutation.mutateAsync(id!)
-      showToast('success', 'Lead converted successfully', {
+      toast.success('Lead converted successfully', {
         description: `Created Organization, Contact, and ${result.opportunity_id ? 'Opportunity' : 'records'}`
       })
       // Navigate to the created organization
@@ -46,7 +65,7 @@ export function LeadDetail() {
         navigate(`/organizations/${result.organization_id}`)
       }
     } catch (error: any) {
-      showToast('error', error.response?.data?.error || 'Failed to convert lead')
+      toast.error(error.response?.data?.error || 'Failed to convert lead')
     }
   }
 
@@ -103,58 +122,234 @@ export function LeadDetail() {
     {
       title: 'Lead Information',
       fields: [
-        { label: 'Full Name', value: `${getSalutationLabel(lead.salutation_name || '')} ${lead.full_name}`.trim() || '-' },
-        { label: 'Title', value: lead.title || '-' },
-        { label: 'Company', value: lead.account_name || '-' },
-        { label: 'Status', value: getStatusBadge(lead.status || 'new') },
-        { label: 'Source', value: getSourceLabel(lead.source || '') },
-        { label: 'Industry', value: getIndustryLabel(lead.industry || '') },
+        { 
+          label: 'Salutation', 
+          value: (
+            <InlineEditSelect
+              value={lead.salutation_name}
+              options={CONTACT_SALUTATIONS}
+              onSave={(value) => updateLeadField('salutation_name', value)}
+              placeholder="Select salutation"
+              allowEmpty
+            />
+          )
+        },
+        { 
+          label: 'Full Name', 
+          value: (
+            <InlineEditText
+              value={lead.full_name}
+              onSave={(value) => updateLeadField('full_name', value)}
+              placeholder="Full name"
+              required
+            />
+          )
+        },
+        { 
+          label: 'Title', 
+          value: (
+            <InlineEditText
+              value={lead.title}
+              onSave={(value) => updateLeadField('title', value)}
+              placeholder="Job title"
+            />
+          )
+        },
+        { 
+          label: 'Organization', 
+          value: (
+            <InlineEditText
+              value={lead.account_name}
+              onSave={(value) => updateLeadField('account_name', value)}
+              placeholder="Organization name"
+            />
+          )
+        },
+        { 
+          label: 'Status', 
+          value: (
+            <InlineEditSelect
+              value={lead.status}
+              options={LEAD_STATUSES}
+              onSave={(value) => updateLeadField('status', value)}
+              placeholder="Select status"
+              allowEmpty
+            />
+          )
+        },
+        { 
+          label: 'Source', 
+          value: (
+            <InlineEditSelect
+              value={lead.source}
+              options={LEAD_SOURCES}
+              onSave={(value) => updateLeadField('source', value)}
+              placeholder="Select source"
+              allowEmpty
+            />
+          )
+        },
+        { 
+          label: 'Industry', 
+          value: (
+            <InlineEditSelect
+              value={lead.industry}
+              options={LEAD_INDUSTRIES}
+              onSave={(value) => updateLeadField('industry', value)}
+              placeholder="Select industry"
+              allowEmpty
+            />
+          )
+        },
       ]
     },
     {
       title: 'Contact Information',
       fields: [
-        { label: 'Email', value: lead.email_address ? (
-          <a href={`mailto:${lead.email_address}`} className="text-primary-600 hover:text-primary-800">
-            {lead.email_address}
-          </a>
-        ) : '-' },
-        { label: 'Phone', value: lead.phone_number || '-' },
-        { label: 'Mobile', value: lead.phone_number_mobile || '-' },
-        { label: 'Website', value: lead.website ? (
-          <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-800">
-            {lead.website}
-          </a>
-        ) : '-' },
-        { label: 'Do Not Call', value: lead.do_not_call ? 'Yes' : 'No' },
+        { 
+          label: 'Email', 
+          value: (
+            <InlineEditEmail
+              value={lead.email_address}
+              onSave={(value) => updateLeadField('email_address', value)}
+              placeholder="Email address"
+            />
+          )
+        },
+        { 
+          label: 'Phone', 
+          value: (
+            <InlineEditText
+              value={lead.phone_number}
+              onSave={(value) => updateLeadField('phone_number', value)}
+              placeholder="Phone number"
+            />
+          )
+        },
+        { 
+          label: 'Mobile', 
+          value: (
+            <InlineEditText
+              value={lead.phone_number_mobile}
+              onSave={(value) => updateLeadField('phone_number_mobile', value)}
+              placeholder="Mobile number"
+            />
+          )
+        },
+        { 
+          label: 'Website', 
+          value: (
+            <InlineEditText
+              value={lead.website}
+              onSave={(value) => updateLeadField('website', value)}
+              placeholder="Website URL"
+            />
+          )
+        },
+        { 
+          label: 'Do Not Call', 
+          value: (
+            <InlineEditSelect
+              value={lead.do_not_call ? 'true' : 'false'}
+              options={[
+                { value: 'false', label: 'No' },
+                { value: 'true', label: 'Yes' }
+              ]}
+              onSave={(value) => updateLeadField('do_not_call', value === 'true')}
+              placeholder="Select option"
+            />
+          )
+        },
       ]
     },
     {
       title: 'Opportunity Information',
       fields: [
-        { label: 'Opportunity Amount', value: formatCurrency(lead.opportunity_amount) },
+        { 
+          label: 'Opportunity Amount', 
+          value: (
+            <InlineEditNumber
+              value={lead.opportunity_amount}
+              onSave={(value) => updateLeadField('opportunity_amount', value)}
+              placeholder="Opportunity amount"
+              min={0}
+              formatDisplay={formatCurrency}
+              allowEmpty
+            />
+          )
+        },
       ]
     },
     {
       title: 'Address',
       fields: [
         { 
-          label: 'Address', 
-          value: [
-            lead.address_street,
-            lead.address_city,
-            lead.address_state,
-            lead.address_postal_code,
-            lead.address_country
-          ].filter(Boolean).join(', ') || '-',
-          colSpan: 3
+          label: 'Street', 
+          value: (
+            <InlineEditText
+              value={lead.address_street}
+              onSave={(value) => updateLeadField('address_street', value)}
+              placeholder="Street address"
+            />
+          )
+        },
+        { 
+          label: 'City', 
+          value: (
+            <InlineEditText
+              value={lead.address_city}
+              onSave={(value) => updateLeadField('address_city', value)}
+              placeholder="City"
+            />
+          )
+        },
+        { 
+          label: 'State', 
+          value: (
+            <InlineEditText
+              value={lead.address_state}
+              onSave={(value) => updateLeadField('address_state', value)}
+              placeholder="State"
+            />
+          )
+        },
+        { 
+          label: 'Postal Code', 
+          value: (
+            <InlineEditText
+              value={lead.address_postal_code}
+              onSave={(value) => updateLeadField('address_postal_code', value)}
+              placeholder="Postal code"
+            />
+          )
+        },
+        { 
+          label: 'Country', 
+          value: (
+            <InlineEditText
+              value={lead.address_country}
+              onSave={(value) => updateLeadField('address_country', value)}
+              placeholder="Country"
+            />
+          )
         },
       ]
     },
     {
       title: 'Additional Information',
       fields: [
-        { label: 'Description', value: lead.description || '-', colSpan: 3 },
+        { 
+          label: 'Description', 
+          value: (
+            <InlineEditText
+              value={lead.description}
+              onSave={(value) => updateLeadField('description', value)}
+              placeholder="Description"
+              multiline
+            />
+          ),
+          colSpan: 3 
+        },
       ]
     },
     ...(lead.converted ? [{
