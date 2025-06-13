@@ -26,6 +26,7 @@ class APIService {
   // Generic API request method with authentication
   private async apiRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
     const token = authService.getAccessToken();
+    console.log('API Request:', endpoint, 'Token available:', !!token);
     
     const config: RequestInit = {
       ...options,
@@ -184,8 +185,17 @@ class APIService {
       method: 'POST',
     });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to convert lead');
+      const errorText = await response.text();
+      console.error('Lead conversion error:', errorText, 'Status:', response.status);
+      let errorMessage = 'Failed to convert lead';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error || errorJson.detail || errorMessage;
+      } catch (e) {
+        // If not JSON, use the text as is
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
     return response.json();
   }

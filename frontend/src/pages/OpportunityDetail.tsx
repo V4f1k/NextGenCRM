@@ -96,8 +96,8 @@ export function OpportunityDetail() {
       title: 'Opportunity Information',
       fields: [
         { label: 'Opportunity Name', value: opportunity.name },
-        { label: 'Account', value: opportunity.account_name ? (
-          <Link to={`/accounts/${opportunity.account}`} className="text-primary-600 hover:text-primary-800">
+        { label: 'Organization', value: opportunity.account_name ? (
+          <Link to={`/organizations/${opportunity.account}`} className="text-primary-600 hover:text-primary-800">
             {opportunity.account_name}
           </Link>
         ) : '-' },

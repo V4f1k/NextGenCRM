@@ -25,7 +25,7 @@ export function Layout() {
     const translations: Record<string, string> = {
       'app.title': 'NextGenCRM',
       'nav.dashboard': 'Dashboard',
-      'nav.accounts': 'Organizations',
+      'nav.organizations': 'Organizations',
       'nav.contacts': 'Contacts', 
       'nav.leads': 'Leads',
       'nav.opportunities': 'Opportunities',

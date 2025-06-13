@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Plus, Search, Filter, Edit, Trash2, DollarSign, TrendingUp, Calendar, Building2, User } from 'lucide-react'
+import { Plus, Search, Filter, Edit, Trash2, DollarSign, TrendingUp, Calendar, Building2, User, GripVertical } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useOpportunities, useDeleteOpportunity, useAccounts, useContacts } from '../hooks/useApi'
+import { DndProvider, useDrag, useDrop } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
+import { useOpportunities, useDeleteOpportunity, useUpdateOpportunity } from '../hooks/useApi'
 import type { OpportunityModel, OpportunityFilters } from '../types'
 import { OPPORTUNITY_STAGES } from '../types'
 import { OpportunityForm } from '../components/forms/OpportunityForm'
@@ -9,6 +11,127 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { DataTable } from '../components/ui/DataTable'
 import type { Column } from '../components/ui/DataTable'
 import { useToastContext } from '../context/ToastContext'
+
+// Drag and drop types
+const ItemTypes = {
+  OPPORTUNITY: 'opportunity',
+}
+
+// Draggable Opportunity Card Component
+interface DraggableOpportunityCardProps {
+  opportunity: OpportunityModel
+  onEdit: (opportunity: OpportunityModel) => void
+  getOrganizationName: (opportunity: OpportunityModel) => string
+  formatCurrency: (amount: number | undefined) => string
+}
+
+function DraggableOpportunityCard({ opportunity, onEdit, getOrganizationName, formatCurrency }: DraggableOpportunityCardProps) {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.OPPORTUNITY,
+    item: { id: opportunity.id, opportunity },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  }))
+
+  return (
+    <div
+      ref={drag}
+      className={`p-3 bg-gray-50 rounded-lg cursor-grab hover:bg-gray-100 transition-all ${
+        isDragging ? 'opacity-50 scale-95' : ''
+      }`}
+      onClick={() => onEdit(opportunity)}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center flex-1">
+          <GripVertical className="w-3 h-3 text-gray-400 mr-1 flex-shrink-0" />
+          <h4 className="text-sm font-medium text-gray-900 truncate flex-1">{opportunity.name}</h4>
+        </div>
+        <span className="text-xs text-gray-500 ml-2">{opportunity.probability}%</span>
+      </div>
+      <div className="text-sm text-gray-600 mb-1">{getOrganizationName(opportunity)}</div>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-green-600">{formatCurrency(opportunity.amount)}</span>
+        {opportunity.close_date && (
+          <span className="text-xs text-gray-500">
+            {new Date(opportunity.close_date).toLocaleDateString()}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Droppable Stage Column Component
+interface DroppableStageColumnProps {
+  stage: { value: string; label: string }
+  opportunities: OpportunityModel[]
+  onDrop: (opportunityId: string, newStage: string) => void
+  getStageColor: (stage: string) => string
+  formatCurrency: (amount: number | undefined) => string
+  onEdit: (opportunity: OpportunityModel) => void
+  getOrganizationName: (opportunity: OpportunityModel) => string
+}
+
+function DroppableStageColumn({ 
+  stage, 
+  opportunities, 
+  onDrop, 
+  getStageColor, 
+  formatCurrency, 
+  onEdit, 
+  getOrganizationName 
+}: DroppableStageColumnProps) {
+  const [{ isOver, canDrop }, drop] = useDrop(() => ({
+    accept: ItemTypes.OPPORTUNITY,
+    drop: (item: { id: string; opportunity: OpportunityModel }) => {
+      if (item.opportunity.stage !== stage.value) {
+        onDrop(item.id, stage.value)
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
+  }))
+
+  const stageValue = opportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0)
+
+  return (
+    <div
+      ref={drop}
+      className={`card transition-all ${
+        isOver && canDrop ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+      }`}
+    >
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-900">{stage.label}</h3>
+          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStageColor(stage.value)}`}>
+            {opportunities.length}
+          </span>
+        </div>
+        <p className="text-sm text-gray-500 mt-1">{formatCurrency(stageValue)}</p>
+      </div>
+      <div className="p-4 space-y-3 max-h-96 overflow-y-auto min-h-[200px]">
+        {opportunities.map((opportunity) => (
+          <DraggableOpportunityCard
+            key={opportunity.id}
+            opportunity={opportunity}
+            onEdit={onEdit}
+            getOrganizationName={getOrganizationName}
+            formatCurrency={formatCurrency}
+          />
+        ))}
+        {opportunities.length === 0 && (
+          <div className="text-center py-8 text-gray-400">
+            <p className="text-sm">Drop opportunities here</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export function Opportunities() {
   const navigate = useNavigate()
@@ -34,8 +157,7 @@ export function Opportunities() {
   }
   
   const { data, isLoading, error, refetch } = useOpportunities(queryFilters)
-  const { data: accountsData } = useAccounts()
-  const { data: contactsData } = useContacts()
+  
   const deleteOpportunityMutation = useDeleteOpportunity({
     onSuccess: () => {
       toast.success('Opportunity deleted successfully')
@@ -48,30 +170,47 @@ export function Opportunities() {
     },
   })
 
-  const getAccountName = (accountId: string | null) => {
-    if (!accountId || !accountsData?.results) return 'No Account'
-    const account = accountsData.results.find(acc => acc.id === accountId)
-    return account?.name || 'Unknown Account'
+  const updateOpportunityMutation = useUpdateOpportunity({
+    onSuccess: () => {
+      toast.success('Opportunity stage updated successfully')
+      refetch()
+    },
+    onError: (error) => {
+      toast.error('Failed to update opportunity stage', {
+        description: error.message,
+      })
+    },
+  })
+
+  // Handle dropping opportunity into new stage
+  const handleDrop = (opportunityId: string, newStage: string) => {
+    const opportunity = opportunities.find(opp => opp.id === opportunityId)
+    if (!opportunity) return
+
+    // Update the opportunity stage
+    updateOpportunityMutation.mutate({
+      id: opportunityId,
+      data: { stage: newStage }
+    })
   }
 
-  const getContactName = (contactId: string | null) => {
-    if (!contactId || !contactsData?.results) return 'No Contact'
-    const contact = contactsData.results.find(cont => cont.id === contactId)
-    return contact ? `${contact.first_name} ${contact.last_name}` : 'Unknown Contact'
+  const getOrganizationName = (opportunity: OpportunityModel) => {
+    // Use account_name directly from the API response
+    return opportunity.account_name || 'No Organization'
+  }
+
+  const getContactName = (opportunity: OpportunityModel) => {
+    return opportunity.primary_contact_name || 'No Contact'
   }
 
   const getStageColor = (stage: string | undefined) => {
     switch (stage) {
       case 'prospecting': return 'bg-gray-100 text-gray-800'
       case 'qualification': return 'bg-blue-100 text-blue-800'
-      case 'needs_analysis': return 'bg-indigo-100 text-indigo-800'
-      case 'value_proposition': return 'bg-purple-100 text-purple-800'
-      case 'id_decision_makers': return 'bg-pink-100 text-pink-800'
-      case 'perception_analysis': return 'bg-yellow-100 text-yellow-800'
-      case 'proposal_price_quote': return 'bg-orange-100 text-orange-800'
-      case 'negotiation_review': return 'bg-red-100 text-red-800'
+      case 'proposal': return 'bg-indigo-100 text-indigo-800'
+      case 'negotiation': return 'bg-orange-100 text-orange-800'
       case 'closed_won': return 'bg-green-100 text-green-800'
-      case 'closed_lost': return 'bg-gray-100 text-gray-800'
+      case 'closed_lost': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -140,18 +279,18 @@ export function Opportunities() {
           </div>
           <div>
             <div className="text-sm font-medium text-gray-900">{opportunity.name}</div>
-            <div className="text-sm text-gray-500">{opportunity.type || 'No type'}</div>
+            <div className="text-sm text-gray-500">{opportunity.type || '-'}</div>
           </div>
         </div>
       ),
     },
     {
       key: 'account_name',
-      header: 'Account',
+      header: 'Organization',
       render: (_, opportunity) => (
         <div className="flex items-center">
           <Building2 className="w-4 h-4 text-gray-400 mr-2" />
-          <span className="text-sm text-gray-900">{getAccountName(opportunity.account_id)}</span>
+          <span className="text-sm text-gray-900">{getOrganizationName(opportunity)}</span>
         </div>
       ),
     },
@@ -161,7 +300,7 @@ export function Opportunities() {
       render: (_, opportunity) => (
         <div className="flex items-center">
           <User className="w-4 h-4 text-gray-400 mr-2" />
-          <span className="text-sm text-gray-900">{getContactName(opportunity.contact_id)}</span>
+          <span className="text-sm text-gray-900">{getContactName(opportunity)}</span>
         </div>
       ),
     },
@@ -254,58 +393,25 @@ export function Opportunities() {
   )
 
   const renderPipelineView = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-      {OPPORTUNITY_STAGES.slice(0, -2).map((stage) => {
-        const stageOpportunities = opportunitiesByStage[stage.value] || []
-        const stageValue = stageOpportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0)
-        
-        return (
-          <div key={stage.value} className="card">
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-900">{stage.label}</h3>
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStageColor(stage.value)}`}>
-                  {stageOpportunities.length}
-                </span>
-              </div>
-              <p className="text-sm text-gray-500 mt-1">{formatCurrency(stageValue)}</p>
-            </div>
-            <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
-              {stageOpportunities.map((opportunity) => (
-                <div
-                  key={opportunity.id}
-                  className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleEditOpportunity(opportunity)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-gray-900 truncate">{opportunity.name}</h4>
-                    <span className="text-xs text-gray-500">{opportunity.probability}%</span>
-                  </div>
-                  <div className="text-sm text-gray-600 mb-1">{getAccountName(opportunity.account_id)}</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-green-600">{formatCurrency(opportunity.amount)}</span>
-                    {opportunity.close_date && (
-                      <span className="text-xs text-gray-500">
-                        {new Date(opportunity.close_date).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {stageOpportunities.length === 0 && (
-                <div className="text-center py-8 text-gray-500 text-sm">
-                  No opportunities
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      })}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      {OPPORTUNITY_STAGES.map((stage) => (
+        <DroppableStageColumn
+          key={stage.value}
+          stage={stage}
+          opportunities={opportunitiesByStage[stage.value] || []}
+          onDrop={handleDrop}
+          getStageColor={getStageColor}
+          formatCurrency={formatCurrency}
+          onEdit={handleEditOpportunity}
+          getOrganizationName={getOrganizationName}
+        />
+      ))}
     </div>
   )
 
   return (
-    <div>
+    <DndProvider backend={HTML5Backend}>
+      <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -458,6 +564,7 @@ export function Opportunities() {
         type="danger"
         isLoading={deleteOpportunityMutation.isPending}
       />
-    </div>
+      </div>
+    </DndProvider>
   )
 }

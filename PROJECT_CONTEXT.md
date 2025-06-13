@@ -3,7 +3,7 @@
 ## Project Overview
 NextGenCRM is a modern, full-featured CRM system built as a complete replacement for EspoCRM using Django REST Framework (backend) and React TypeScript (frontend). The goal is to replicate all EspoCRM functionality while using modern, maintainable technologies.
 
-## Current Status: ✅ COMPLETE CRM SYSTEM WITH DOCKER DEPLOYMENT (2025-06-12)
+## Current Status: ✅ COMPLETE CRM SYSTEM WITH ENHANCED WORKFLOW & DRAG-DROP (2025-06-13)
 
 ### Technology Stack
 - **Backend**: Django 4.2 + Django REST Framework
@@ -13,6 +13,7 @@ NextGenCRM is a modern, full-featured CRM system built as a complete replacement
 - **State Management**: TanStack Query
 - **Forms**: React Hook Form + Zod validation
 - **Authentication**: JWT tokens
+- **Drag & Drop**: React DnD with HTML5 backend
 - **Real-time**: Django Channels (configured, not implemented)
 - **Task Queue**: Celery + Redis (configured and implemented in Docker)
 - **Deployment**: Docker + Docker Compose
@@ -182,7 +183,37 @@ npm run dev
 - **Database**: SQLite for development, PostgreSQL for production
 - **Authentication**: JWT tokens with configurable lifetime
 
-## ✅ RECENTLY COMPLETED (2025-06-12)
+## ✅ RECENTLY COMPLETED (2025-06-13)
+
+### 1. Enhanced CRM Workflow Implementation ✅ COMPLETED
+- ✅ **Updated Lead Workflow**: Simplified 5-stage process (New → Contacted → In Qualification → Disqualified → Converted to Opportunity)
+- ✅ **Updated Opportunity Pipeline**: Streamlined 6-stage process (Prospecting → Qualification → Proposal → Negotiation → Closed Won/Lost)
+- ✅ **Database Migration**: Automatic mapping of old workflow values to new stages with data preservation
+- ✅ **Frontend Type Updates**: Complete TypeScript interface updates for new workflow
+- ✅ **Backend Model Updates**: Django model choices updated with proper validation
+
+### 2. Drag & Drop Pipeline Functionality ✅ COMPLETED
+- ✅ **React DnD Integration**: Implemented with HTML5 backend for professional drag and drop
+- ✅ **Draggable Opportunity Cards**: Interactive cards with visual feedback and grip indicators
+- ✅ **Droppable Stage Columns**: Each pipeline stage accepts dropped opportunities
+- ✅ **Automatic Stage Updates**: Real-time API calls to update opportunity stages on drop
+- ✅ **Visual Feedback**: Hover effects, drag indicators, and smooth transitions
+- ✅ **Error Handling**: Toast notifications for successful/failed stage updates
+
+### 3. UI/UX Improvements ✅ COMPLETED  
+- ✅ **Terminology Consistency**: Changed "Account" to "Organization" throughout the application
+- ✅ **Pipeline Visualization**: Complete 6-column pipeline view with all stages visible
+- ✅ **Lead Conversion Logic**: Updated to use new workflow statuses with smart re-conversion
+- ✅ **Form Validations**: Updated all forms to work with new workflow stages
+- ✅ **Responsive Design**: Improved grid layouts for different screen sizes
+
+### 4. Bug Fixes & Optimizations ✅ COMPLETED
+- ✅ **i18n Import Issues**: Fixed Docker environment compatibility issues
+- ✅ **Organization/Contact Column Data**: Fixed API serializers to properly display related data
+- ✅ **Lead Conversion Authentication**: Resolved JWT token refresh issues
+- ✅ **Form Field Mappings**: Corrected field mismatches between frontend and backend
+
+## ✅ PREVIOUSLY COMPLETED (2025-06-12)
 
 ### 1. REST API Implementation ✅ COMPLETED
 - ✅ Created comprehensive Django REST Framework serializers for all models

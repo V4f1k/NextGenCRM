@@ -170,11 +170,10 @@ class Lead(BaseModel, AddressModel, ContactInfoModel, AssignmentModel, TaggableM
     
     STATUS_CHOICES = [
         ('new', 'New'),
-        ('assigned', 'Assigned'),
-        ('in_process', 'In Process'),
-        ('converted', 'Converted'),
-        ('recycled', 'Recycled'),
-        ('dead', 'Dead'),
+        ('contacted', 'Contacted'),
+        ('in_qualification', 'In Qualification'),
+        ('disqualified', 'Disqualified'),
+        ('converted_to_opportunity', 'Converted to Opportunity'),
     ]
     
     SOURCE_CHOICES = [
@@ -289,14 +288,10 @@ class Opportunity(BaseModel, AssignmentModel, TaggableModel):
     STAGE_CHOICES = [
         ('prospecting', 'Prospecting'),
         ('qualification', 'Qualification'),
-        ('needs_analysis', 'Needs Analysis'),
-        ('value_proposition', 'Value Proposition'),
-        ('id_decision_makers', 'Id. Decision Makers'),
-        ('perception_analysis', 'Perception Analysis'),
-        ('proposal_price_quote', 'Proposal/Price Quote'),
-        ('negotiation_review', 'Negotiation/Review'),
-        ('closed_won', 'Closed Won'),
-        ('closed_lost', 'Closed Lost'),
+        ('proposal', 'Proposal'),
+        ('negotiation', 'Negotiation'),
+        ('closed_won', 'Closed - Won'),
+        ('closed_lost', 'Closed - Lost'),
     ]
     
     TYPE_CHOICES = [

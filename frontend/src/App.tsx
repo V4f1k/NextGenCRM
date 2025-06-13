@@ -16,7 +16,7 @@ import { OrganizationDetail } from './pages/OrganizationDetail'
 import { ContactDetail } from './pages/ContactDetail'
 import { LeadDetail } from './pages/LeadDetail'
 import { OpportunityDetail } from './pages/OpportunityDetail'
-// import './i18n/config' // Temporarily disabled for Docker
+// import './i18n/config' // Temporarily disabled for Docker - DO NOT UNCOMMENT
 
 const queryClient = new QueryClient({
   defaultOptions: {

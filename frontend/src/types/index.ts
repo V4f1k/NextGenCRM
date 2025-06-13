@@ -136,8 +136,9 @@ export interface LeadModel extends BaseModel {
 
 export interface OpportunityModel extends BaseModel {
   name: string;
-  organization?: string;
-  organization_name?: string;
+  account?: string;
+  account_name?: string;
+  type?: string;
   stage?: string;
   amount?: number;
   probability?: number;
@@ -152,6 +153,7 @@ export interface OpportunityModel extends BaseModel {
   assigned_team?: string;
   created_by_name?: string;
   assigned_user_name?: string;
+  primary_contact_name?: string;
   contacts?: string[];
 }
 
@@ -400,11 +402,10 @@ export const ORGANIZATION_INDUSTRIES = [
 
 export const LEAD_STATUSES = [
   { value: 'new', label: 'New' },
-  { value: 'assigned', label: 'Assigned' },
-  { value: 'in_process', label: 'In Process' },
-  { value: 'converted', label: 'Converted' },
-  { value: 'recycled', label: 'Recycled' },
-  { value: 'dead', label: 'Dead' }
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'in_qualification', label: 'In Qualification' },
+  { value: 'disqualified', label: 'Disqualified' },
+  { value: 'converted_to_opportunity', label: 'Converted to Opportunity' }
 ] as const;
 
 export const LEAD_SOURCES = [
@@ -424,14 +425,10 @@ export const LEAD_SOURCES = [
 export const OPPORTUNITY_STAGES = [
   { value: 'prospecting', label: 'Prospecting' },
   { value: 'qualification', label: 'Qualification' },
-  { value: 'needs_analysis', label: 'Needs Analysis' },
-  { value: 'value_proposition', label: 'Value Proposition' },
-  { value: 'id_decision_makers', label: 'Id. Decision Makers' },
-  { value: 'perception_analysis', label: 'Perception Analysis' },
-  { value: 'proposal', label: 'Proposal/Price Quote' },
-  { value: 'negotiation', label: 'Negotiation/Review' },
-  { value: 'closed_won', label: 'Closed Won' },
-  { value: 'closed_lost', label: 'Closed Lost' }
+  { value: 'proposal', label: 'Proposal' },
+  { value: 'negotiation', label: 'Negotiation' },
+  { value: 'closed_won', label: 'Closed - Won' },
+  { value: 'closed_lost', label: 'Closed - Lost' }
 ] as const;
 
 export const TASK_STATUSES = [

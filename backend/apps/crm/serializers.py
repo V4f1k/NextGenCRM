@@ -108,12 +108,20 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     """Simplified Opportunity serializer for list views"""
     account_name = serializers.CharField(source='account.name', read_only=True)
     assigned_user_name = serializers.CharField(source='assigned_user.get_full_name', read_only=True)
+    primary_contact_name = serializers.SerializerMethodField()
+    
+    def get_primary_contact_name(self, obj):
+        """Get the name of the first contact associated with this opportunity"""
+        first_contact = obj.contacts.first()
+        if first_contact:
+            return f"{first_contact.first_name} {first_contact.last_name}"
+        return None
     
     class Meta:
         model = Opportunity
         fields = (
             'id', 'name', 'account_name', 'stage', 'amount', 'probability',
-            'close_date', 'created_at', 'assigned_user_name'
+            'close_date', 'created_at', 'assigned_user_name', 'primary_contact_name', 'type'
         )
 
 

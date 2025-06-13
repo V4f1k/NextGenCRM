@@ -73,7 +73,7 @@ export function OpportunityForm({
     },
   })
 
-  // Fetch accounts and contacts for dropdowns
+  // Fetch organizations and contacts for dropdowns
   const { data: organizationsData } = useOrganizations()
   const { data: contactsData } = useContacts()
 
@@ -96,7 +96,7 @@ export function OpportunityForm({
   const currentStage = watch('stage')
   const currentProbability = watch('probability')
 
-  // Filter contacts by selected account
+  // Filter contacts by selected organization
   const filteredContacts = contactsData?.results?.filter(contact => 
     !selectedOrganizationId || contact.organization_id === selectedOrganizationId
   ) || []
@@ -237,7 +237,7 @@ export function OpportunityForm({
                 </label>
                 <select {...register('organization_id')} className="input">
                   <option value="">Select organization</option>
-                  {organizationsData?.results?.map((account) => (
+                  {organizationsData?.results?.map((organization) => (
                     <option key={organization.id} value={organization.id}>
                       {organization.name}
                     </option>
@@ -258,7 +258,7 @@ export function OpportunityForm({
                   ))}
                 </select>
                 {selectedOrganizationId && filteredContacts.length === 0 && (
-                  <p className="mt-1 text-sm text-gray-500">No contacts found for selected account</p>
+                  <p className="mt-1 text-sm text-gray-500">No contacts found for selected organization</p>
                 )}
               </div>
 

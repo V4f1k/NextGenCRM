@@ -107,6 +107,12 @@ export function Leads() {
   }
 
   const handleConvertLead = (lead: LeadModel) => {
+    if (lead.converted || lead.status === 'converted_to_opportunity') {
+      toast.error('Lead already converted', {
+        description: 'This lead has already been converted to business records.'
+      })
+      return
+    }
     setConvertDialog({ isOpen: true, lead })
   }
 
@@ -154,7 +160,7 @@ export function Leads() {
         <div className="flex items-center">
           <Building2 className="w-4 h-4 text-gray-400 mr-2" />
           <div>
-            <div className="text-sm text-gray-900">{lead.company || 'No company'}</div>
+            <div className="text-sm text-gray-900">{lead.account_name || 'No company'}</div>
             {lead.website && (
               <div className="text-sm text-gray-500">{lead.website}</div>
             )}
@@ -229,7 +235,7 @@ export function Leads() {
       header: 'Actions',
       render: (_, lead) => (
         <div className="flex items-center justify-end gap-2">
-          {lead.status !== 'converted' && (
+          {!lead.converted && lead.status !== 'converted_to_opportunity' && (
             <button 
               className="text-green-600 hover:text-green-900 p-1"
               title="Convert lead"
@@ -344,7 +350,7 @@ export function Leads() {
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-500">Converted</p>
               <p className="text-lg font-semibold text-gray-900">
-                {data?.results?.filter(lead => lead.status === 'converted').length || 0}
+                {data?.results?.filter(lead => lead.status === 'converted_to_opportunity').length || 0}
               </p>
             </div>
           </div>

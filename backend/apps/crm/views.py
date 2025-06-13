@@ -255,8 +255,9 @@ def dashboard_stats(request):
         'leads': {
             'total': Lead.objects.filter(deleted=False).count(),
             'new': Lead.objects.filter(deleted=False, status='new').count(),
-            'qualified': Lead.objects.filter(deleted=False, status='qualified').count(),
-            'converted': Lead.objects.filter(deleted=False, status='converted').count(),
+            'contacted': Lead.objects.filter(deleted=False, status='contacted').count(),
+            'in_qualification': Lead.objects.filter(deleted=False, status='in_qualification').count(),
+            'converted': Lead.objects.filter(deleted=False, status='converted_to_opportunity').count(),
         },
         'opportunities': {
             'total': Opportunity.objects.filter(deleted=False).count(),
@@ -404,12 +405,36 @@ class LeadViewSet(viewsets.ModelViewSet):
         """Convert lead to account, contact and opportunity"""
         lead = self.get_object()
         
-        # Check if already converted
+        # Check if already converted and records still exist
         if lead.converted:
-            return Response(
-                {'error': 'Lead has already been converted'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            # Check if any records created from this lead still exist
+            from .models import Account, Contact, Opportunity
+            
+            # Look for existing records that might have been created from this lead
+            existing_accounts = Account.objects.filter(
+                deleted=False,
+                name__icontains=lead.account_name or f"{lead.first_name} {lead.last_name}"
+            ).exists() if lead.account_name or (lead.first_name and lead.last_name) else False
+            
+            existing_contacts = Contact.objects.filter(
+                deleted=False,
+                first_name=lead.first_name,
+                last_name=lead.last_name,
+                email_address=lead.email_address
+            ).exists() if lead.first_name and lead.last_name else False
+            
+            # If no related records exist, allow re-conversion
+            if not existing_accounts and not existing_contacts:
+                # Reset conversion status to allow re-conversion
+                lead.converted = False
+                lead.converted_at = None
+                lead.status = 'new'  # Reset to original status
+                lead.save()
+            else:
+                return Response(
+                    {'error': 'Lead has already been converted and records still exist'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         try:
             with transaction.atomic():
@@ -471,11 +496,12 @@ class LeadViewSet(viewsets.ModelViewSet):
                 # Mark lead as converted
                 lead.converted = True
                 lead.converted_at = timezone.now()
+                lead.status = 'converted_to_opportunity'
                 lead.save()
                 
                 return Response({
                     'message': 'Lead converted successfully',
-                    'account_id': str(account.id),
+                    'organization_id': str(account.id),
                     'contact_id': str(contact.id),
                     'opportunity_id': str(opportunity.id) if opportunity else None,
                 }, status=status.HTTP_200_OK)
