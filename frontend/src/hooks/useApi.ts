@@ -85,9 +85,53 @@ export const useUpdateOrganization = (
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<OrganizationModel> }) => 
       apiService.updateOrganization(id, data),
+    onMutate: async ({ id, data }) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: queryKeys.organization(id) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.organizations });
+
+      // Snapshot the previous values
+      const previousOrganization = queryClient.getQueryData(queryKeys.organization(id));
+      const previousOrganizations = queryClient.getQueriesData({ queryKey: queryKeys.organizations });
+
+      // Optimistically update the individual record
+      if (previousOrganization) {
+        queryClient.setQueryData(queryKeys.organization(id), (old: OrganizationModel) => ({
+          ...old,
+          ...data,
+        }));
+      }
+
+      // Optimistically update all list queries
+      queryClient.setQueriesData({ queryKey: queryKeys.organizations }, (old: any) => {
+        if (!old?.results) return old;
+        return {
+          ...old,
+          results: old.results.map((org: OrganizationModel) =>
+            org.id === id ? { ...org, ...data } : org
+          ),
+        };
+      });
+
+      // Return a context object with the snapshotted values
+      return { previousOrganization, previousOrganizations };
+    },
+    onError: (err, variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousOrganization) {
+        queryClient.setQueryData(queryKeys.organization(variables.id), context.previousOrganization);
+      }
+      if (context?.previousOrganizations) {
+        context.previousOrganizations.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.organizations });
+      // Update with the actual server response
       queryClient.setQueryData(queryKeys.organization(variables.id), data);
+      // Refresh all organization lists to ensure consistency
+      queryClient.invalidateQueries({ queryKey: queryKeys.organizations });
     },
     ...options,
   });
@@ -163,9 +207,45 @@ export const useUpdateContact = (
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<ContactModel> }) => 
       apiService.updateContact(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.contact(id) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.contacts });
+
+      const previousContact = queryClient.getQueryData(queryKeys.contact(id));
+      const previousContacts = queryClient.getQueriesData({ queryKey: queryKeys.contacts });
+
+      if (previousContact) {
+        queryClient.setQueryData(queryKeys.contact(id), (old: ContactModel) => ({
+          ...old,
+          ...data,
+        }));
+      }
+
+      queryClient.setQueriesData({ queryKey: queryKeys.contacts }, (old: any) => {
+        if (!old?.results) return old;
+        return {
+          ...old,
+          results: old.results.map((contact: ContactModel) =>
+            contact.id === id ? { ...contact, ...data } : contact
+          ),
+        };
+      });
+
+      return { previousContact, previousContacts };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousContact) {
+        queryClient.setQueryData(queryKeys.contact(variables.id), context.previousContact);
+      }
+      if (context?.previousContacts) {
+        context.previousContacts.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.contacts });
       queryClient.setQueryData(queryKeys.contact(variables.id), data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.contacts });
     },
     ...options,
   });
@@ -234,9 +314,45 @@ export const useUpdateLead = (
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<LeadModel> }) => 
       apiService.updateLead(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.lead(id) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.leads });
+
+      const previousLead = queryClient.getQueryData(queryKeys.lead(id));
+      const previousLeads = queryClient.getQueriesData({ queryKey: queryKeys.leads });
+
+      if (previousLead) {
+        queryClient.setQueryData(queryKeys.lead(id), (old: LeadModel) => ({
+          ...old,
+          ...data,
+        }));
+      }
+
+      queryClient.setQueriesData({ queryKey: queryKeys.leads }, (old: any) => {
+        if (!old?.results) return old;
+        return {
+          ...old,
+          results: old.results.map((lead: LeadModel) =>
+            lead.id === id ? { ...lead, ...data } : lead
+          ),
+        };
+      });
+
+      return { previousLead, previousLeads };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousLead) {
+        queryClient.setQueryData(queryKeys.lead(variables.id), context.previousLead);
+      }
+      if (context?.previousLeads) {
+        context.previousLeads.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.leads });
       queryClient.setQueryData(queryKeys.lead(variables.id), data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads });
     },
     ...options,
   });
@@ -324,9 +440,45 @@ export const useUpdateOpportunity = (
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<OpportunityModel> }) => 
       apiService.updateOpportunity(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.opportunity(id) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.opportunities });
+
+      const previousOpportunity = queryClient.getQueryData(queryKeys.opportunity(id));
+      const previousOpportunities = queryClient.getQueriesData({ queryKey: queryKeys.opportunities });
+
+      if (previousOpportunity) {
+        queryClient.setQueryData(queryKeys.opportunity(id), (old: OpportunityModel) => ({
+          ...old,
+          ...data,
+        }));
+      }
+
+      queryClient.setQueriesData({ queryKey: queryKeys.opportunities }, (old: any) => {
+        if (!old?.results) return old;
+        return {
+          ...old,
+          results: old.results.map((opp: OpportunityModel) =>
+            opp.id === id ? { ...opp, ...data } : opp
+          ),
+        };
+      });
+
+      return { previousOpportunity, previousOpportunities };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousOpportunity) {
+        queryClient.setQueryData(queryKeys.opportunity(variables.id), context.previousOpportunity);
+      }
+      if (context?.previousOpportunities) {
+        context.previousOpportunities.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.opportunities });
       queryClient.setQueryData(queryKeys.opportunity(variables.id), data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.opportunities });
     },
     ...options,
   });
@@ -395,9 +547,45 @@ export const useUpdateTask = (
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<TaskModel> }) => 
       apiService.updateTask(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.task(id) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
+
+      const previousTask = queryClient.getQueryData(queryKeys.task(id));
+      const previousTasks = queryClient.getQueriesData({ queryKey: queryKeys.tasks });
+
+      if (previousTask) {
+        queryClient.setQueryData(queryKeys.task(id), (old: TaskModel) => ({
+          ...old,
+          ...data,
+        }));
+      }
+
+      queryClient.setQueriesData({ queryKey: queryKeys.tasks }, (old: any) => {
+        if (!old?.results) return old;
+        return {
+          ...old,
+          results: old.results.map((task: TaskModel) =>
+            task.id === id ? { ...task, ...data } : task
+          ),
+        };
+      });
+
+      return { previousTask, previousTasks };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousTask) {
+        queryClient.setQueryData(queryKeys.task(variables.id), context.previousTask);
+      }
+      if (context?.previousTasks) {
+        context.previousTasks.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
       queryClient.setQueryData(queryKeys.task(variables.id), data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
     },
     ...options,
   });

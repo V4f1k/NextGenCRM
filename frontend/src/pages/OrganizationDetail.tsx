@@ -1,23 +1,42 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Edit, Trash2, Building2, Globe, Phone, Mail, MapPin, DollarSign } from 'lucide-react'
-import { useOrganization, useDeleteOrganization } from '../hooks/useApi'
+import { useOrganization, useDeleteOrganization, useUpdateOrganization } from '../hooks/useApi'
 import { DetailView } from '../components/DetailView'
 import { OrganizationForm } from '../components/forms/OrganizationForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToastContext } from '../context/ToastContext'
+import { InlineEditText, InlineEditSelect, InlineEditNumber, InlineEditEmail } from '../components/ui/InlineEdit'
 import { ORGANIZATION_TYPES, ORGANIZATION_INDUSTRIES } from '../types'
+import type { OrganizationModel } from '../types'
 import { format } from 'date-fns'
 
 export function OrganizationDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { showToast } = useToastContext()
+  const toast = useToastContext()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
   const { data: organization, isLoading, error } = useOrganization(id!)
   const deleteOrganizationMutation = useDeleteOrganization()
+  const updateOrganizationMutation = useUpdateOrganization({
+    onSuccess: () => {
+      toast.success('Organization updated successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to update organization', {
+        description: error.message,
+      })
+    },
+  })
+
+  const updateOrganizationField = async (field: keyof OrganizationModel, value: any): Promise<void> => {
+    await updateOrganizationMutation.mutateAsync({
+      id: id!,
+      data: { [field]: value }
+    })
+  }
 
   const handleEdit = () => {
     setIsEditOpen(true)
@@ -26,10 +45,10 @@ export function OrganizationDetail() {
   const handleDelete = async () => {
     try {
       await deleteOrganizationMutation.mutateAsync(id!)
-      showToast('success', 'Organization deleted successfully')
+      toast.success('Organization deleted successfully')
       navigate('/organizations')
     } catch (error) {
-      showToast('error', 'Failed to delete organization')
+      toast.error('Failed to delete organization')
     }
   }
 
@@ -77,41 +96,285 @@ export function OrganizationDetail() {
     {
       title: 'General Information',
       fields: [
-        { label: 'Organization Name', value: organization.name },
-        { label: 'Type', value: getTypeBadge(organization.type || '') },
-        { label: 'Industry', value: getIndustryBadge(organization.industry || '') },
-        { label: 'Website', value: organization.website ? (
-          <a href={organization.website} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-800">
-            {organization.website}
-          </a>
-        ) : '-' },
-        { label: 'Phone', value: organization.phone_number || '-' },
-        { label: 'Email', value: organization.email_address || '-' },
+        { 
+          label: 'Organization Name', 
+          value: (
+            <InlineEditText
+              value={organization.name}
+              onSave={(value) => updateOrganizationField('name', value)}
+              placeholder="Organization name"
+              required
+            />
+          )
+        },
+        { 
+          label: 'Type', 
+          value: (
+            <InlineEditSelect
+              value={organization.type}
+              options={ORGANIZATION_TYPES}
+              onSave={(value) => updateOrganizationField('type', value)}
+              placeholder="Select type"
+              allowEmpty
+            />
+          )
+        },
+        { 
+          label: 'Industry', 
+          value: (
+            <InlineEditSelect
+              value={organization.industry}
+              options={ORGANIZATION_INDUSTRIES}
+              onSave={(value) => updateOrganizationField('industry', value)}
+              placeholder="Select industry"
+              allowEmpty
+            />
+          )
+        },
+        { 
+          label: 'Website', 
+          value: (
+            <InlineEditText
+              value={organization.website}
+              onSave={(value) => updateOrganizationField('website', value)}
+              placeholder="Website URL"
+            />
+          )
+        },
+        { 
+          label: 'Phone', 
+          value: (
+            <InlineEditText
+              value={organization.phone_number}
+              onSave={(value) => updateOrganizationField('phone_number', value)}
+              placeholder="Phone number"
+            />
+          )
+        },
+        { 
+          label: 'Email', 
+          value: (
+            <InlineEditEmail
+              value={organization.email_address}
+              onSave={(value) => updateOrganizationField('email_address', value)}
+              placeholder="Email address"
+            />
+          )
+        },
       ]
     },
     {
       title: 'Financial Information',
       fields: [
-        { label: 'Annual Revenue', value: formatCurrency(organization.annual_revenue) },
-        { label: 'Number of Employees', value: organization.number_of_employees || '-' },
-        { label: 'SIC Code', value: organization.sic_code || '-' },
-        { label: 'Ticker Symbol', value: organization.ticker_symbol || '-' },
-        { label: 'Ownership', value: organization.ownership || '-' },
-        { label: 'Rating', value: organization.rating || '-' },
+        { 
+          label: 'Annual Revenue', 
+          value: (
+            <InlineEditNumber
+              value={organization.annual_revenue}
+              onSave={(value) => updateOrganizationField('annual_revenue', value)}
+              placeholder="Annual revenue"
+              min={0}
+              formatDisplay={formatCurrency}
+              allowEmpty
+            />
+          )
+        },
+        { 
+          label: 'Number of Employees', 
+          value: (
+            <InlineEditNumber
+              value={organization.number_of_employees}
+              onSave={(value) => updateOrganizationField('number_of_employees', value)}
+              placeholder="Number of employees"
+              min={0}
+              allowEmpty
+            />
+          )
+        },
+        { 
+          label: 'SIC Code', 
+          value: (
+            <InlineEditText
+              value={organization.sic_code}
+              onSave={(value) => updateOrganizationField('sic_code', value)}
+              placeholder="SIC code"
+            />
+          )
+        },
+        { 
+          label: 'Ticker Symbol', 
+          value: (
+            <InlineEditText
+              value={organization.ticker_symbol}
+              onSave={(value) => updateOrganizationField('ticker_symbol', value)}
+              placeholder="Ticker symbol"
+            />
+          )
+        },
+        { 
+          label: 'Ownership', 
+          value: (
+            <InlineEditText
+              value={organization.ownership}
+              onSave={(value) => updateOrganizationField('ownership', value)}
+              placeholder="Ownership"
+            />
+          )
+        },
+        { 
+          label: 'Rating', 
+          value: (
+            <InlineEditSelect
+              value={organization.rating}
+              options={[
+                { value: 'Hot', label: 'Hot' },
+                { value: 'Warm', label: 'Warm' },
+                { value: 'Cold', label: 'Cold' }
+              ]}
+              onSave={(value) => updateOrganizationField('rating', value)}
+              placeholder="Select rating"
+              allowEmpty
+            />
+          )
+        },
       ]
     },
     {
-      title: 'Addresses',
+      title: 'Billing Address',
       fields: [
-        { label: 'Billing Address', value: formatAddress('billing'), colSpan: 3 },
-        { label: 'Shipping Address', value: formatAddress('shipping'), colSpan: 3 },
+        { 
+          label: 'Street', 
+          value: (
+            <InlineEditText
+              value={organization.billing_address_street}
+              onSave={(value) => updateOrganizationField('billing_address_street', value)}
+              placeholder="Street address"
+            />
+          )
+        },
+        { 
+          label: 'City', 
+          value: (
+            <InlineEditText
+              value={organization.billing_address_city}
+              onSave={(value) => updateOrganizationField('billing_address_city', value)}
+              placeholder="City"
+            />
+          )
+        },
+        { 
+          label: 'State', 
+          value: (
+            <InlineEditText
+              value={organization.billing_address_state}
+              onSave={(value) => updateOrganizationField('billing_address_state', value)}
+              placeholder="State"
+            />
+          )
+        },
+        { 
+          label: 'Postal Code', 
+          value: (
+            <InlineEditText
+              value={organization.billing_address_postal_code}
+              onSave={(value) => updateOrganizationField('billing_address_postal_code', value)}
+              placeholder="Postal code"
+            />
+          )
+        },
+        { 
+          label: 'Country', 
+          value: (
+            <InlineEditText
+              value={organization.billing_address_country}
+              onSave={(value) => updateOrganizationField('billing_address_country', value)}
+              placeholder="Country"
+            />
+          )
+        },
+      ]
+    },
+    {
+      title: 'Shipping Address',
+      fields: [
+        { 
+          label: 'Street', 
+          value: (
+            <InlineEditText
+              value={organization.shipping_address_street}
+              onSave={(value) => updateOrganizationField('shipping_address_street', value)}
+              placeholder="Street address"
+            />
+          )
+        },
+        { 
+          label: 'City', 
+          value: (
+            <InlineEditText
+              value={organization.shipping_address_city}
+              onSave={(value) => updateOrganizationField('shipping_address_city', value)}
+              placeholder="City"
+            />
+          )
+        },
+        { 
+          label: 'State', 
+          value: (
+            <InlineEditText
+              value={organization.shipping_address_state}
+              onSave={(value) => updateOrganizationField('shipping_address_state', value)}
+              placeholder="State"
+            />
+          )
+        },
+        { 
+          label: 'Postal Code', 
+          value: (
+            <InlineEditText
+              value={organization.shipping_address_postal_code}
+              onSave={(value) => updateOrganizationField('shipping_address_postal_code', value)}
+              placeholder="Postal code"
+            />
+          )
+        },
+        { 
+          label: 'Country', 
+          value: (
+            <InlineEditText
+              value={organization.shipping_address_country}
+              onSave={(value) => updateOrganizationField('shipping_address_country', value)}
+              placeholder="Country"
+            />
+          )
+        },
       ]
     },
     {
       title: 'Additional Information',
       fields: [
-        { label: 'Description', value: organization.description || '-', colSpan: 3 },
-        { label: 'Tags', value: organization.tags?.join(', ') || '-', colSpan: 3 },
+        { 
+          label: 'Description', 
+          value: (
+            <InlineEditText
+              value={organization.description}
+              onSave={(value) => updateOrganizationField('description', value)}
+              placeholder="Description"
+              multiline
+            />
+          ),
+          colSpan: 3 
+        },
+        { 
+          label: 'Tags', 
+          value: (
+            <InlineEditText
+              value={organization.tags?.join(', ')}
+              onSave={(value) => updateOrganizationField('tags', value ? value.split(',').map(tag => tag.trim()) : [])}
+              placeholder="Enter tags separated by commas"
+            />
+          ),
+          colSpan: 3 
+        },
       ]
     },
     {

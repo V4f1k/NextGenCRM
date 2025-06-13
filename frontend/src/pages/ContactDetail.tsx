@@ -1,23 +1,42 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Edit, Trash2, User, Phone, Mail, MapPin, Building2, Briefcase } from 'lucide-react'
-import { useContact, useDeleteContact } from '../hooks/useApi'
+import { useContact, useDeleteContact, useUpdateContact } from '../hooks/useApi'
 import { DetailView } from '../components/DetailView'
 import { ContactForm } from '../components/forms/ContactForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToastContext } from '../context/ToastContext'
+import { InlineEditText, InlineEditSelect, InlineEditEmail } from '../components/ui/InlineEdit'
 import { CONTACT_SALUTATIONS } from '../types'
+import type { ContactModel } from '../types'
 import { format } from 'date-fns'
 
 export function ContactDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { showToast } = useToastContext()
+  const toast = useToastContext()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
   const { data: contact, isLoading, error } = useContact(id!)
   const deleteContactMutation = useDeleteContact()
+  const updateContactMutation = useUpdateContact({
+    onSuccess: () => {
+      toast.success('Contact updated successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to update contact', {
+        description: error.message,
+      })
+    },
+  })
+
+  const updateContactField = async (field: keyof ContactModel, value: any): Promise<void> => {
+    await updateContactMutation.mutateAsync({
+      id: id!,
+      data: { [field]: value }
+    })
+  }
 
   const handleEdit = () => {
     setIsEditOpen(true)
@@ -26,10 +45,10 @@ export function ContactDetail() {
   const handleDelete = async () => {
     try {
       await deleteContactMutation.mutateAsync(id!)
-      showToast('success', 'Contact deleted successfully')
+      toast.success('Contact deleted successfully')
       navigate('/contacts')
     } catch (error) {
-      showToast('error', 'Failed to delete contact')
+      toast.error('Failed to delete contact')
     }
   }
 
@@ -51,78 +70,288 @@ export function ContactDetail() {
     {
       title: 'Personal Information',
       fields: [
-        { label: 'Full Name', value: `${getSalutationLabel(contact.salutation_name || '')} ${contact.full_name}`.trim() || '-' },
-        { label: 'Title', value: contact.title || '-' },
-        { label: 'Department', value: contact.department || '-' },
-        { label: 'Account', value: contact.account_name ? (
-          <Link to={`/accounts/${contact.account}`} className="text-primary-600 hover:text-primary-800">
-            {contact.account_name}
-          </Link>
-        ) : '-' },
+        { 
+          label: 'Salutation', 
+          value: (
+            <InlineEditSelect
+              value={contact.salutation_name}
+              options={CONTACT_SALUTATIONS}
+              onSave={(value) => updateContactField('salutation_name', value)}
+              placeholder="Select salutation"
+              allowEmpty
+            />
+          )
+        },
+        { 
+          label: 'Full Name', 
+          value: (
+            <InlineEditText
+              value={contact.full_name}
+              onSave={(value) => updateContactField('full_name', value)}
+              placeholder="Full name"
+              required
+            />
+          )
+        },
+        { 
+          label: 'Title', 
+          value: (
+            <InlineEditText
+              value={contact.title}
+              onSave={(value) => updateContactField('title', value)}
+              placeholder="Job title"
+            />
+          )
+        },
+        { 
+          label: 'Department', 
+          value: (
+            <InlineEditText
+              value={contact.department}
+              onSave={(value) => updateContactField('department', value)}
+              placeholder="Department"
+            />
+          )
+        },
+        { 
+          label: 'Organization', 
+          value: contact.account_name ? (
+            <Link to={`/organizations/${contact.organization}`} className="text-primary-600 hover:text-primary-800">
+              {contact.account_name}
+            </Link>
+          ) : '-' 
+        },
       ]
     },
     {
       title: 'Contact Information',
       fields: [
-        { label: 'Email', value: contact.email_address ? (
-          <a href={`mailto:${contact.email_address}`} className="text-primary-600 hover:text-primary-800">
-            {contact.email_address}
-          </a>
-        ) : '-' },
-        { label: 'Phone', value: contact.phone_number || '-' },
-        { label: 'Mobile', value: contact.phone_number_mobile || '-' },
-        { label: 'Home Phone', value: contact.phone_number_home || '-' },
-        { label: 'Fax', value: contact.phone_number_fax || '-' },
-        { label: 'Do Not Call', value: contact.do_not_call ? 'Yes' : 'No' },
+        { 
+          label: 'Email', 
+          value: (
+            <InlineEditEmail
+              value={contact.email_address}
+              onSave={(value) => updateContactField('email_address', value)}
+              placeholder="Email address"
+            />
+          )
+        },
+        { 
+          label: 'Phone', 
+          value: (
+            <InlineEditText
+              value={contact.phone_number}
+              onSave={(value) => updateContactField('phone_number', value)}
+              placeholder="Phone number"
+            />
+          )
+        },
+        { 
+          label: 'Mobile', 
+          value: (
+            <InlineEditText
+              value={contact.phone_number_mobile}
+              onSave={(value) => updateContactField('phone_number_mobile', value)}
+              placeholder="Mobile number"
+            />
+          )
+        },
+        { 
+          label: 'Home Phone', 
+          value: (
+            <InlineEditText
+              value={contact.phone_number_home}
+              onSave={(value) => updateContactField('phone_number_home', value)}
+              placeholder="Home phone"
+            />
+          )
+        },
+        { 
+          label: 'Fax', 
+          value: (
+            <InlineEditText
+              value={contact.phone_number_fax}
+              onSave={(value) => updateContactField('phone_number_fax', value)}
+              placeholder="Fax number"
+            />
+          )
+        },
+        { 
+          label: 'Do Not Call', 
+          value: (
+            <InlineEditSelect
+              value={contact.do_not_call ? 'true' : 'false'}
+              options={[
+                { value: 'false', label: 'No' },
+                { value: 'true', label: 'Yes' }
+              ]}
+              onSave={(value) => updateContactField('do_not_call', value === 'true')}
+              placeholder="Select option"
+            />
+          )
+        },
       ]
     },
     {
       title: 'Social Media',
       fields: [
-        { label: 'LinkedIn', value: contact.linkedin ? (
-          <a href={contact.linkedin} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-800">
-            {contact.linkedin}
-          </a>
-        ) : '-' },
-        { label: 'Twitter', value: contact.twitter ? (
-          <a href={`https://twitter.com/${contact.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-800">
-            {contact.twitter}
-          </a>
-        ) : '-' },
-        { label: 'Facebook', value: contact.facebook || '-' },
+        { 
+          label: 'LinkedIn', 
+          value: (
+            <InlineEditText
+              value={contact.linkedin}
+              onSave={(value) => updateContactField('linkedin', value)}
+              placeholder="LinkedIn URL"
+            />
+          )
+        },
+        { 
+          label: 'Twitter', 
+          value: (
+            <InlineEditText
+              value={contact.twitter}
+              onSave={(value) => updateContactField('twitter', value)}
+              placeholder="Twitter handle"
+            />
+          )
+        },
+        { 
+          label: 'Facebook', 
+          value: (
+            <InlineEditText
+              value={contact.facebook}
+              onSave={(value) => updateContactField('facebook', value)}
+              placeholder="Facebook URL"
+            />
+          )
+        },
       ]
     },
     {
-      title: 'Addresses',
+      title: 'Mailing Address',
       fields: [
         { 
-          label: 'Mailing Address', 
-          value: [
-            contact.mailing_address_street,
-            contact.mailing_address_city,
-            contact.mailing_address_state,
-            contact.mailing_address_postal_code,
-            contact.mailing_address_country
-          ].filter(Boolean).join(', ') || '-',
-          colSpan: 3
+          label: 'Street', 
+          value: (
+            <InlineEditText
+              value={contact.mailing_address_street}
+              onSave={(value) => updateContactField('mailing_address_street', value)}
+              placeholder="Street address"
+            />
+          )
         },
         { 
-          label: 'Other Address', 
-          value: [
-            contact.other_address_street,
-            contact.other_address_city,
-            contact.other_address_state,
-            contact.other_address_postal_code,
-            contact.other_address_country
-          ].filter(Boolean).join(', ') || '-',
-          colSpan: 3
+          label: 'City', 
+          value: (
+            <InlineEditText
+              value={contact.mailing_address_city}
+              onSave={(value) => updateContactField('mailing_address_city', value)}
+              placeholder="City"
+            />
+          )
+        },
+        { 
+          label: 'State', 
+          value: (
+            <InlineEditText
+              value={contact.mailing_address_state}
+              onSave={(value) => updateContactField('mailing_address_state', value)}
+              placeholder="State"
+            />
+          )
+        },
+        { 
+          label: 'Postal Code', 
+          value: (
+            <InlineEditText
+              value={contact.mailing_address_postal_code}
+              onSave={(value) => updateContactField('mailing_address_postal_code', value)}
+              placeholder="Postal code"
+            />
+          )
+        },
+        { 
+          label: 'Country', 
+          value: (
+            <InlineEditText
+              value={contact.mailing_address_country}
+              onSave={(value) => updateContactField('mailing_address_country', value)}
+              placeholder="Country"
+            />
+          )
+        },
+      ]
+    },
+    {
+      title: 'Other Address',
+      fields: [
+        { 
+          label: 'Street', 
+          value: (
+            <InlineEditText
+              value={contact.other_address_street}
+              onSave={(value) => updateContactField('other_address_street', value)}
+              placeholder="Street address"
+            />
+          )
+        },
+        { 
+          label: 'City', 
+          value: (
+            <InlineEditText
+              value={contact.other_address_city}
+              onSave={(value) => updateContactField('other_address_city', value)}
+              placeholder="City"
+            />
+          )
+        },
+        { 
+          label: 'State', 
+          value: (
+            <InlineEditText
+              value={contact.other_address_state}
+              onSave={(value) => updateContactField('other_address_state', value)}
+              placeholder="State"
+            />
+          )
+        },
+        { 
+          label: 'Postal Code', 
+          value: (
+            <InlineEditText
+              value={contact.other_address_postal_code}
+              onSave={(value) => updateContactField('other_address_postal_code', value)}
+              placeholder="Postal code"
+            />
+          )
+        },
+        { 
+          label: 'Country', 
+          value: (
+            <InlineEditText
+              value={contact.other_address_country}
+              onSave={(value) => updateContactField('other_address_country', value)}
+              placeholder="Country"
+            />
+          )
         },
       ]
     },
     {
       title: 'Additional Information',
       fields: [
-        { label: 'Description', value: contact.description || '-', colSpan: 3 },
+        { 
+          label: 'Description', 
+          value: (
+            <InlineEditText
+              value={contact.description}
+              onSave={(value) => updateContactField('description', value)}
+              placeholder="Description"
+              multiline
+            />
+          ),
+          colSpan: 3 
+        },
       ]
     },
     {

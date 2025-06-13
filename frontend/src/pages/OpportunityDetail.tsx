@@ -1,23 +1,42 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Edit, Trash2, DollarSign, TrendingUp, Calendar, Building2 } from 'lucide-react'
-import { useOpportunity, useDeleteOpportunity } from '../hooks/useApi'
+import { useOpportunity, useDeleteOpportunity, useUpdateOpportunity } from '../hooks/useApi'
 import { DetailView } from '../components/DetailView'
 import { OpportunityForm } from '../components/forms/OpportunityForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToastContext } from '../context/ToastContext'
-import { OPPORTUNITY_STAGES, LEAD_SOURCES } from '../types'
+import { InlineEditText, InlineEditSelect, InlineEditNumber, InlineEditEmail } from '../components/ui/InlineEdit'
+import { OPPORTUNITY_STAGES, OPPORTUNITY_TYPES, LEAD_SOURCES } from '../types'
+import type { OpportunityModel } from '../types'
 import { format } from 'date-fns'
 
 export function OpportunityDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { showToast } = useToastContext()
+  const toast = useToastContext()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
   const { data: opportunity, isLoading, error } = useOpportunity(id!)
   const deleteOpportunityMutation = useDeleteOpportunity()
+  const updateOpportunityMutation = useUpdateOpportunity({
+    onSuccess: () => {
+      toast.success('Opportunity updated successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to update opportunity', {
+        description: error.message,
+      })
+    },
+  })
+
+  const updateOpportunityField = async (field: keyof OpportunityModel, value: any): Promise<void> => {
+    await updateOpportunityMutation.mutateAsync({
+      id: id!,
+      data: { [field]: value }
+    })
+  }
 
   const handleEdit = () => {
     setIsEditOpen(true)
@@ -26,10 +45,10 @@ export function OpportunityDetail() {
   const handleDelete = async () => {
     try {
       await deleteOpportunityMutation.mutateAsync(id!)
-      showToast('success', 'Opportunity deleted successfully')
+      toast.success('Opportunity deleted successfully')
       navigate('/opportunities')
     } catch (error) {
-      showToast('error', 'Failed to delete opportunity')
+      toast.error('Failed to delete opportunity')
     }
   }
 
@@ -95,25 +114,120 @@ export function OpportunityDetail() {
     {
       title: 'Opportunity Information',
       fields: [
-        { label: 'Opportunity Name', value: opportunity.name },
-        { label: 'Organization', value: opportunity.account_name ? (
-          <Link to={`/organizations/${opportunity.account}`} className="text-primary-600 hover:text-primary-800">
-            {opportunity.account_name}
-          </Link>
-        ) : '-' },
-        { label: 'Stage', value: getStageBadge(opportunity.stage || 'prospecting') },
-        { label: 'Close Date', value: formatDate(opportunity.close_date) },
-        { label: 'Type', value: opportunity.type || '-' },
-        { label: 'Lead Source', value: getSourceLabel(opportunity.lead_source || '') },
+        { 
+          label: 'Opportunity Name', 
+          value: (
+            <InlineEditText
+              value={opportunity.name}
+              onSave={(value) => updateOpportunityField('name', value)}
+              placeholder="Opportunity name"
+              required
+            />
+          )
+        },
+        { 
+          label: 'Organization', 
+          value: opportunity.account_name ? (
+            <Link to={`/organizations/${opportunity.account}`} className="text-primary-600 hover:text-primary-800">
+              {opportunity.account_name}
+            </Link>
+          ) : '-' 
+        },
+        { 
+          label: 'Stage', 
+          value: (
+            <InlineEditSelect
+              value={opportunity.stage}
+              options={OPPORTUNITY_STAGES}
+              onSave={(value) => updateOpportunityField('stage', value)}
+              placeholder="Select stage"
+            />
+          )
+        },
+        { 
+          label: 'Close Date', 
+          value: (
+            <InlineEditText
+              value={opportunity.close_date}
+              onSave={(value) => updateOpportunityField('close_date', value)}
+              placeholder="YYYY-MM-DD"
+            />
+          )
+        },
+        { 
+          label: 'Type', 
+          value: (
+            <InlineEditSelect
+              value={opportunity.type}
+              options={OPPORTUNITY_TYPES}
+              onSave={(value) => updateOpportunityField('type', value)}
+              placeholder="Select type"
+              allowEmpty
+            />
+          )
+        },
+        { 
+          label: 'Lead Source', 
+          value: (
+            <InlineEditSelect
+              value={opportunity.lead_source}
+              options={LEAD_SOURCES}
+              onSave={(value) => updateOpportunityField('lead_source', value)}
+              placeholder="Select source"
+              allowEmpty
+            />
+          )
+        },
       ]
     },
     {
       title: 'Financial Information',
       fields: [
-        { label: 'Amount', value: formatCurrency(opportunity.amount) },
-        { label: 'Probability (%)', value: opportunity.probability ? `${opportunity.probability}%` : '-' },
+        { 
+          label: 'Amount', 
+          value: (
+            <InlineEditNumber
+              value={opportunity.amount}
+              onSave={(value) => updateOpportunityField('amount', value)}
+              placeholder="Amount"
+              min={0}
+              formatDisplay={formatCurrency}
+              allowEmpty
+            />
+          )
+        },
+        { 
+          label: 'Probability (%)', 
+          value: (
+            <InlineEditNumber
+              value={opportunity.probability}
+              onSave={(value) => updateOpportunityField('probability', value)}
+              placeholder="Probability"
+              min={0}
+              max={100}
+              formatDisplay={(value) => value ? `${value}%` : '-'}
+              allowEmpty
+            />
+          )
+        },
         { label: 'Expected Revenue', value: getExpectedRevenue() },
-        { label: 'Currency', value: opportunity.amount_currency || 'USD' },
+        { 
+          label: 'Currency', 
+          value: (
+            <InlineEditSelect
+              value={opportunity.amount_currency}
+              options={[
+                { value: 'USD', label: 'USD' },
+                { value: 'EUR', label: 'EUR' },
+                { value: 'GBP', label: 'GBP' },
+                { value: 'CZK', label: 'CZK' }
+              ]}
+              onSave={(value) => updateOpportunityField('amount_currency', value)}
+              placeholder="Select currency"
+              allowEmpty
+            />
+          )
+        },
       ]
     },
     {
@@ -135,8 +249,30 @@ export function OpportunityDetail() {
     {
       title: 'Additional Information',
       fields: [
-        { label: 'Next Step', value: opportunity.next_step || '-', colSpan: 3 },
-        { label: 'Description', value: opportunity.description || '-', colSpan: 3 },
+        { 
+          label: 'Next Step', 
+          value: (
+            <InlineEditText
+              value={opportunity.next_step}
+              onSave={(value) => updateOpportunityField('next_step', value)}
+              placeholder="Next step"
+              multiline
+            />
+          ),
+          colSpan: 3 
+        },
+        { 
+          label: 'Description', 
+          value: (
+            <InlineEditText
+              value={opportunity.description}
+              onSave={(value) => updateOpportunityField('description', value)}
+              placeholder="Description"
+              multiline
+            />
+          ),
+          colSpan: 3 
+        },
       ]
     },
     {

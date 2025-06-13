@@ -1,23 +1,42 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Edit, Trash2, Calendar, Clock, AlertCircle } from 'lucide-react'
-import { useTask, useDeleteTask } from '../hooks/useApi'
+import { useTask, useDeleteTask, useUpdateTask } from '../hooks/useApi'
 import { DetailView } from '../components/DetailView'
 import { TaskForm } from '../components/forms/TaskForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToastContext } from '../context/ToastContext'
+import { InlineEditText, InlineEditSelect } from '../components/ui/InlineEdit'
 import { TASK_STATUSES, TASK_PRIORITIES } from '../types'
+import type { TaskModel } from '../types'
 import { format } from 'date-fns'
 
 export function TaskDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { showToast } = useToastContext()
+  const toast = useToastContext()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
   const { data: task, isLoading, error } = useTask(id!)
   const deleteTaskMutation = useDeleteTask()
+  const updateTaskMutation = useUpdateTask({
+    onSuccess: () => {
+      toast.success('Task updated successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to update task', {
+        description: error.message,
+      })
+    },
+  })
+
+  const updateTaskField = async (field: keyof TaskModel, value: any): Promise<void> => {
+    await updateTaskMutation.mutateAsync({
+      id: id!,
+      data: { [field]: value }
+    })
+  }
 
   const handleEdit = () => {
     setIsEditOpen(true)
@@ -26,10 +45,10 @@ export function TaskDetail() {
   const handleDelete = async () => {
     try {
       await deleteTaskMutation.mutateAsync(id!)
-      showToast('success', 'Task deleted successfully')
+      toast.success('Task deleted successfully')
       navigate('/tasks')
     } catch (error) {
-      showToast('error', 'Failed to delete task')
+      toast.error('Failed to delete task')
     }
   }
 
@@ -77,18 +96,77 @@ export function TaskDetail() {
     {
       title: 'General Information',
       fields: [
-        { label: 'Task Name', value: task.name },
-        { label: 'Status', value: getStatusBadge(task.status || 'not_started') },
-        { label: 'Priority', value: getPriorityBadge(task.priority || 'normal') },
-        { label: 'Start Date', value: formatDate(task.date_start) },
-        { label: 'Due Date', value: formatDate(task.date_end) },
+        { 
+          label: 'Task Name', 
+          value: (
+            <InlineEditText
+              value={task.name}
+              onSave={(value) => updateTaskField('name', value)}
+              placeholder="Task name"
+              required
+            />
+          )
+        },
+        { 
+          label: 'Status', 
+          value: (
+            <InlineEditSelect
+              value={task.status}
+              options={TASK_STATUSES}
+              onSave={(value) => updateTaskField('status', value)}
+              placeholder="Select status"
+            />
+          )
+        },
+        { 
+          label: 'Priority', 
+          value: (
+            <InlineEditSelect
+              value={task.priority}
+              options={TASK_PRIORITIES}
+              onSave={(value) => updateTaskField('priority', value)}
+              placeholder="Select priority"
+            />
+          )
+        },
+        { 
+          label: 'Start Date', 
+          value: (
+            <InlineEditText
+              value={task.date_start}
+              onSave={(value) => updateTaskField('date_start', value)}
+              placeholder="YYYY-MM-DD HH:MM:SS"
+            />
+          )
+        },
+        { 
+          label: 'Due Date', 
+          value: (
+            <InlineEditText
+              value={task.date_end}
+              onSave={(value) => updateTaskField('date_end', value)}
+              placeholder="YYYY-MM-DD HH:MM:SS"
+            />
+          )
+        },
         { label: 'Assigned To', value: task.assigned_user_name || '-' },
       ]
     },
     {
       title: 'Details',
       fields: [
-        { label: 'Description', value: task.description || '-', colSpan: 3 },
+        { 
+          label: 'Description', 
+          value: (
+            <InlineEditText
+              value={task.description}
+              onSave={(value) => updateTaskField('description', value)}
+              placeholder="Description"
+              multiline
+            />
+          ),
+          colSpan: 3 
+        },
       ]
     },
     {
