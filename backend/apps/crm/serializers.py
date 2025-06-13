@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Account, Contact, Lead, Opportunity, Task, Call
+from .models import Account, Contact, Lead, Opportunity, Task, Call, Prospect
 
 User = get_user_model()
 
@@ -259,3 +259,33 @@ class CallListSerializer(serializers.ModelSerializer):
             except:
                 pass
         return None
+
+class ProspectSerializer(serializers.ModelSerializer):
+    """Prospect serializer with all fields"""
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    modified_by_name = serializers.CharField(source='modified_by.get_full_name', read_only=True)
+    assigned_user_name = serializers.CharField(source='assigned_user.get_full_name', read_only=True)
+    assigned_team_name = serializers.CharField(source='assigned_team.name', read_only=True)
+    full_contact_name = serializers.CharField(read_only=True)
+    should_send_followup = serializers.BooleanField(read_only=True)
+    
+    class Meta:
+        model = Prospect
+        fields = '__all__'
+        read_only_fields = ('id', 'created_at', 'modified_at', 'created_by', 'modified_by')
+
+
+class ProspectListSerializer(serializers.ModelSerializer):
+    """Simplified Prospect serializer for list views"""
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    assigned_user_name = serializers.CharField(source='assigned_user.get_full_name', read_only=True)
+    full_contact_name = serializers.CharField(read_only=True)
+    
+    class Meta:
+        model = Prospect
+        fields = (
+            'id', 'company_name', 'contact_name', 'full_contact_name', 'email_address',
+            'phone_number', 'status', 'sequence_position', 'niche', 'location',
+            'validated', 'auto_validation_score', 'next_followup_date',
+            'created_at', 'assigned_user_name', 'created_by_name'
+        )

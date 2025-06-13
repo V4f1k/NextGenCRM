@@ -58,6 +58,19 @@ export interface OrganizationModel extends BaseModel {
   ownership?: string;
   rating?: string;
   ticker_symbol?: string;
+  
+  // ICO Enrichment (Czech Business Registry)
+  ico?: string;
+  ico_enriched?: boolean;
+  ico_enriched_at?: string;
+  legal_form?: string;
+  legal_form_code?: string;
+  registration_date?: string;
+  business_activities?: Array<{
+    nace_code?: string;
+    description?: string;
+  }>;
+  
   created_by?: string;
   modified_by?: string;
   assigned_user?: string;
@@ -126,6 +139,19 @@ export interface LeadModel extends BaseModel {
   do_not_call?: boolean;
   converted?: boolean;
   converted_at?: string;
+  
+  // ICO Enrichment (Czech Business Registry)
+  ico?: string;
+  ico_enriched?: boolean;
+  ico_enriched_at?: string;
+  legal_form?: string;
+  legal_form_code?: string;
+  registration_date?: string;
+  business_activities?: Array<{
+    nace_code?: string;
+    description?: string;
+  }>;
+  
   created_by?: string;
   modified_by?: string;
   assigned_user?: string;
@@ -147,6 +173,12 @@ export interface OpportunityModel extends BaseModel {
   close_date?: string;
   description?: string;
   campaign?: string;
+  
+  // ICO Enrichment (Czech Business Registry)
+  ico?: string;
+  ico_enriched?: boolean;
+  ico_enriched_at?: string;
+  
   created_by?: string;
   modified_by?: string;
   assigned_user?: string;
@@ -197,6 +229,99 @@ export interface CallModel extends BaseModel {
   assigned_user_name?: string;
   contacts?: string[];
   users?: string[];
+}
+
+export interface ProspectModel extends BaseModel {
+  // Company Information
+  company_name: string;
+  website?: string;
+  description?: string;
+  ico?: string;
+  industry?: string;
+  
+  // Contact Information
+  contact_name?: string;
+  contact_first_name?: string;
+  contact_last_name?: string;
+  contact_title?: string;
+  full_contact_name?: string;
+  
+  // Email and Phone (from ContactInfoModel)
+  email_address?: string;
+  email_address_is_opted_out?: boolean;
+  email_address_is_invalid?: boolean;
+  phone_number?: string;
+  phone_number_is_opted_out?: boolean;
+  phone_number_is_invalid?: boolean;
+  
+  // Additional contacts from business registry
+  additional_contacts?: any[];
+  
+  // Lead Generation Source
+  niche: string;
+  location: string;
+  keyword?: string;
+  campaign_id?: string;
+  
+  // Address Information
+  address_street?: string;
+  address_city?: string;
+  address_state?: string;
+  address_country?: string;
+  address_postal_code?: string;
+  
+  // Email Automation
+  status?: string;
+  sequence_position?: number;
+  next_followup_date?: string;
+  email_subject?: string;
+  email_body?: string;
+  email_sent?: boolean;
+  email_status?: string;
+  
+  // Validation and Quality
+  validated?: boolean;
+  validation_notes?: string;
+  auto_validation_score?: number;
+  should_send_followup?: boolean;
+  
+  // Tracking
+  last_email_sent?: string;
+  response_received?: boolean;
+  response_date?: string;
+  
+  // Conversion tracking
+  converted_to_lead?: boolean;
+  converted_to_contact?: boolean;
+  converted_to_organization?: boolean;
+  lead_id?: string;
+  contact_id?: string;
+  organization_id?: string;
+  
+  // ICO Enrichment (Czech Business Registry)
+  ico_enriched?: boolean;
+  ico_enriched_at?: string;
+  legal_form?: string;
+  legal_form_code?: string;
+  registration_date?: string;
+  employee_count_range?: string;
+  business_activities?: Array<{
+    nace_code?: string;
+    description?: string;
+  }>;
+  
+  // Assignment fields
+  created_by?: string;
+  modified_by?: string;
+  assigned_user?: string;
+  assigned_team?: string;
+  created_by_name?: string;
+  modified_by_name?: string;
+  assigned_user_name?: string;
+  assigned_team_name?: string;
+  
+  // Tags
+  tags?: string[];
 }
 
 // Authentication types
@@ -297,6 +422,8 @@ export interface BaseFilters {
   created_at_before?: string;
   assigned_user?: string;
   assigned_team?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export interface OrganizationFilters extends BaseFilters {
@@ -355,6 +482,23 @@ export interface CallFilters extends BaseFilters {
   date_start_before?: string;
   parent_type?: string;
   parent_id?: string;
+}
+
+export interface ProspectFilters extends BaseFilters {
+  company_name?: string;
+  contact_name?: string;
+  email_address?: string;
+  phone_number?: string;
+  niche?: string;
+  location?: string;
+  status?: string;
+  sequence_position?: number;
+  validated?: boolean;
+  response_received?: boolean;
+  next_followup_date_after?: string;
+  next_followup_date_before?: string;
+  campaign_id?: string;
+  industry?: string;
 }
 
 // Choice constants (matching Django model choices)
@@ -492,6 +636,28 @@ export const LEAD_INDUSTRIES = [
 export const OPPORTUNITY_TYPES = [
   { value: 'existing_business', label: 'Existing Business' },
   { value: 'new_business', label: 'New Business' }
+] as const;
+
+export const PROSPECT_STATUSES = [
+  { value: 'new', label: 'New' },
+  { value: 'validated', label: 'Validated' },
+  { value: 'email_generated', label: 'Email Generated' },
+  { value: 'sent', label: 'Sent' },
+  { value: 'follow_up_1', label: 'Follow-up 1' },
+  { value: 'follow_up_2', label: 'Follow-up 2' },
+  { value: 'follow_up_3', label: 'Follow-up 3' },
+  { value: 'responded', label: 'Responded' },
+  { value: 'converted', label: 'Converted' },
+  { value: 'dead', label: 'Dead' },
+  { value: 'disqualified', label: 'Disqualified' }
+] as const;
+
+export const PROSPECT_SEQUENCE_POSITIONS = [
+  { value: 0, label: 'Initial Email' },
+  { value: 1, label: 'Follow-up 1' },
+  { value: 2, label: 'Follow-up 2' },
+  { value: 3, label: 'Follow-up 3' },
+  { value: 4, label: 'Completed' }
 ] as const;
 
 // Remove re-exports to avoid conflicts - using direct exports only

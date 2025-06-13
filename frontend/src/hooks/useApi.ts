@@ -8,6 +8,7 @@ import type {
   OpportunityModel,
   TaskModel,
   CallModel,
+  ProspectModel,
   PaginatedResponse,
   DashboardStats,
   RecentActivity,
@@ -16,7 +17,8 @@ import type {
   LeadFilters,
   OpportunityFilters,
   TaskFilters,
-  CallFilters
+  CallFilters,
+  ProspectFilters
 } from '../types';
 
 // Query Keys
@@ -33,6 +35,9 @@ export const queryKeys = {
   task: (id: string) => ['tasks', id] as const,
   calls: ['calls'] as const,
   call: (id: string) => ['calls', id] as const,
+  prospects: ['prospects'] as const,
+  prospect: (id: string) => ['prospects', id] as const,
+  pendingFollowups: ['prospects', 'pending-followups'] as const,
   dashboardStats: ['dashboard', 'stats'] as const,
   recentActivities: ['dashboard', 'activities'] as const,
   globalSearch: (query: string) => ['search', query] as const,
@@ -678,6 +683,265 @@ export const useDeleteCall = (
   });
 };
 
+// Prospect Hooks
+export const useProspects = (
+  filters?: ProspectFilters,
+  options?: UseQueryOptions<PaginatedResponse<ProspectModel>, Error>
+) => {
+  return useQuery({
+    queryKey: [...queryKeys.prospects, filters],
+    queryFn: () => apiService.getProspects(filters),
+    ...options,
+  });
+};
+
+export const useProspect = (
+  id: string,
+  options?: UseQueryOptions<ProspectModel, Error>
+) => {
+  return useQuery({
+    queryKey: queryKeys.prospect(id),
+    queryFn: () => apiService.getProspect(id),
+    enabled: !!id,
+    ...options,
+  });
+};
+
+export const useCreateProspect = (
+  options?: UseMutationOptions<ProspectModel, Error, Partial<ProspectModel>>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: Partial<ProspectModel>) => apiService.createProspect(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospects });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats });
+    },
+    ...options,
+  });
+};
+
+export const useUpdateProspect = (
+  options?: UseMutationOptions<ProspectModel, Error, { id: string; data: Partial<ProspectModel> }>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<ProspectModel> }) => 
+      apiService.updateProspect(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.prospect(id) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.prospects });
+
+      const previousProspect = queryClient.getQueryData(queryKeys.prospect(id));
+      const previousProspects = queryClient.getQueriesData({ queryKey: queryKeys.prospects });
+
+      if (previousProspect) {
+        queryClient.setQueryData(queryKeys.prospect(id), (old: ProspectModel) => ({
+          ...old,
+          ...data,
+        }));
+      }
+
+      queryClient.setQueriesData({ queryKey: queryKeys.prospects }, (old: any) => {
+        if (!old?.results) return old;
+        return {
+          ...old,
+          results: old.results.map((prospect: ProspectModel) =>
+            prospect.id === id ? { ...prospect, ...data } : prospect
+          ),
+        };
+      });
+
+      return { previousProspect, previousProspects };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousProspect) {
+        queryClient.setQueryData(queryKeys.prospect(variables.id), context.previousProspect);
+      }
+      if (context?.previousProspects) {
+        context.previousProspects.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(queryKeys.prospect(variables.id), data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospects });
+    },
+    ...options,
+  });
+};
+
+export const useDeleteProspect = (
+  options?: UseMutationOptions<void, Error, string>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => apiService.deleteProspect(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospects });
+      queryClient.removeQueries({ queryKey: queryKeys.prospect(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats });
+    },
+    ...options,
+  });
+};
+
+export const useValidateProspect = (
+  options?: UseMutationOptions<{ message: string }, Error, { id: string; notes?: string }>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, notes }: { id: string; notes?: string }) => 
+      apiService.validateProspect(id, notes),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospect(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospects });
+    },
+    ...options,
+  });
+};
+
+export const useAdvanceProspectSequence = (
+  options?: UseMutationOptions<{
+    message: string;
+    new_position: number;
+    status: string;
+  }, Error, string>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => apiService.advanceProspectSequence(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospect(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospects });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pendingFollowups });
+    },
+    ...options,
+  });
+};
+
+export const useMarkProspectResponded = (
+  options?: UseMutationOptions<{ message: string }, Error, string>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => apiService.markProspectResponded(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospect(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospects });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pendingFollowups });
+    },
+    ...options,
+  });
+};
+
+export const useConvertProspectToLead = (
+  options?: UseMutationOptions<{
+    message: string;
+    lead_id: string;
+  }, Error, string>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => apiService.convertProspectToLead(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospect(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospects });
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats });
+    },
+    ...options,
+  });
+};
+
+export const useEnrichProspectFromICO = (
+  options?: UseMutationOptions<{
+    message: string;
+    ico: string;
+    enriched_fields: Record<string, any>;
+  }, Error, string>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => apiService.enrichProspectFromICO(id),
+    onSuccess: (data, id) => {
+      // Immediately update the prospect with enriched data
+      queryClient.setQueryData(queryKeys.prospect(id), (old: ProspectModel | undefined) => {
+        if (!old) return old;
+        
+        return {
+          ...old,
+          ...data.enriched_fields,
+          ico_enriched: true,
+          ico_enriched_at: new Date().toISOString(),
+        } as ProspectModel;
+      });
+      
+      // Also update the prospect in any list queries
+      queryClient.setQueriesData({ queryKey: queryKeys.prospects }, (old: any) => {
+        if (!old?.results) return old;
+        return {
+          ...old,
+          results: old.results.map((prospect: ProspectModel) =>
+            prospect.id === id ? {
+              ...prospect,
+              ...data.enriched_fields,
+              ico_enriched: true,
+              ico_enriched_at: new Date().toISOString(),
+            } : prospect
+          ),
+        };
+      });
+    },
+    ...options,
+  });
+};
+
+export const useBulkEnrichProspects = (
+  options?: UseMutationOptions<{
+    message: string;
+    enriched_count: number;
+    failed_count: number;
+    results: Array<{
+      id: string;
+      company_name: string;
+      ico: string;
+      status: string;
+      error?: string;
+    }>;
+  }, Error, { prospect_ids: string[] }>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: { prospect_ids: string[] }) => apiService.bulkEnrichProspects(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospects });
+    },
+    ...options,
+  });
+};
+
+export const usePendingFollowups = (
+  options?: UseQueryOptions<ProspectModel[], Error>
+) => {
+  return useQuery({
+    queryKey: queryKeys.pendingFollowups,
+    queryFn: () => apiService.getPendingFollowups(),
+    refetchInterval: 300000, // Refetch every 5 minutes
+    ...options,
+  });
+};
+
 // Dashboard Hooks
 export const useDashboardStats = (
   options?: UseQueryOptions<DashboardStats, Error>
@@ -698,6 +962,127 @@ export const useRecentActivities = (
     queryKey: [...queryKeys.recentActivities, limit],
     queryFn: () => apiService.getRecentActivities(limit),
     refetchInterval: 60000, // Refetch every minute
+    ...options,
+  });
+};
+
+// ICO Enrichment Hooks for Organizations, Leads, and Opportunities
+export const useEnrichOrganizationFromICO = (
+  options?: UseMutationOptions<{
+    message: string;
+    ico: string;
+    enriched_fields: Record<string, any>;
+  }, Error, string>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => apiService.enrichOrganizationFromICO(id),
+    onSuccess: (data, id) => {
+      // Immediately update the organization with enriched data
+      queryClient.setQueryData(queryKeys.organization(id), (old: OrganizationModel | undefined) => {
+        if (!old) return old;
+        
+        return {
+          ...old,
+          ...data.enriched_fields,
+        } as OrganizationModel;
+      });
+      
+      // Also update the organization in any list queries
+      queryClient.setQueriesData({ queryKey: queryKeys.organizations }, (old: any) => {
+        if (!old?.results) return old;
+        return {
+          ...old,
+          results: old.results.map((org: OrganizationModel) =>
+            org.id === id ? {
+              ...org,
+              ...data.enriched_fields,
+            } : org
+          ),
+        };
+      });
+    },
+    ...options,
+  });
+};
+
+export const useEnrichLeadFromICO = (
+  options?: UseMutationOptions<{
+    message: string;
+    ico: string;
+    enriched_fields: Record<string, any>;
+  }, Error, string>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => apiService.enrichLeadFromICO(id),
+    onSuccess: (data, id) => {
+      // Immediately update the lead with enriched data
+      queryClient.setQueryData(queryKeys.lead(id), (old: LeadModel | undefined) => {
+        if (!old) return old;
+        
+        return {
+          ...old,
+          ...data.enriched_fields,
+        } as LeadModel;
+      });
+      
+      // Also update the lead in any list queries
+      queryClient.setQueriesData({ queryKey: queryKeys.leads }, (old: any) => {
+        if (!old?.results) return old;
+        return {
+          ...old,
+          results: old.results.map((lead: LeadModel) =>
+            lead.id === id ? {
+              ...lead,
+              ...data.enriched_fields,
+            } : lead
+          ),
+        };
+      });
+    },
+    ...options,
+  });
+};
+
+export const useEnrichOpportunityFromICO = (
+  options?: UseMutationOptions<{
+    message: string;
+    ico: string;
+    enriched_fields: Record<string, any>;
+  }, Error, string>
+) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => apiService.enrichOpportunityFromICO(id),
+    onSuccess: (data, id) => {
+      // Immediately update the opportunity with enriched data
+      queryClient.setQueryData(queryKeys.opportunity(id), (old: OpportunityModel | undefined) => {
+        if (!old) return old;
+        
+        return {
+          ...old,
+          ...data.enriched_fields,
+        } as OpportunityModel;
+      });
+      
+      // Also update the opportunity in any list queries
+      queryClient.setQueriesData({ queryKey: queryKeys.opportunities }, (old: any) => {
+        if (!old?.results) return old;
+        return {
+          ...old,
+          results: old.results.map((opp: OpportunityModel) =>
+            opp.id === id ? {
+              ...opp,
+              ...data.enriched_fields,
+            } : opp
+          ),
+        };
+      });
+    },
     ...options,
   });
 };

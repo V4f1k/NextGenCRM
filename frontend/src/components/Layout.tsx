@@ -8,7 +8,9 @@ import {
   BarChart3,
   Settings,
   Menu,
-  LogOut
+  LogOut,
+  Mail,
+  Zap
 } from 'lucide-react'
 import { useState } from 'react'
 import clsx from 'clsx'
@@ -28,6 +30,8 @@ export function Layout() {
       'nav.organizations': 'Organizations',
       'nav.contacts': 'Contacts', 
       'nav.leads': 'Leads',
+      'nav.prospects': 'Prospects',
+      'nav.leadGeneration': 'Lead Generation',
       'nav.opportunities': 'Opportunities',
       'nav.tasks': 'Tasks',
       'app.logout': 'Logout'
@@ -40,6 +44,8 @@ export function Layout() {
     { name: t('nav.organizations'), href: '/organizations', icon: Building2 },
     { name: t('nav.contacts'), href: '/contacts', icon: Users },
     { name: t('nav.leads'), href: '/leads', icon: UserPlus },
+    { name: t('nav.prospects'), href: '/prospects', icon: Mail },
+    { name: t('nav.leadGeneration'), href: '/lead-generation', icon: Zap },
     { name: t('nav.opportunities'), href: '/opportunities', icon: Target },
     { name: t('nav.tasks'), href: '/tasks', icon: CheckSquare },
   ]

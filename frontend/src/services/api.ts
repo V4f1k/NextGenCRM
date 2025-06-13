@@ -5,6 +5,7 @@ import type {
   OpportunityModel,
   TaskModel,
   CallModel,
+  ProspectModel,
   PaginatedResponse,
   DashboardStats,
   RecentActivity,
@@ -14,6 +15,7 @@ import type {
   OpportunityFilters,
   TaskFilters,
   CallFilters,
+  ProspectFilters,
   BaseFilters
 } from '../types';
 import { authService } from './auth';
@@ -263,6 +265,99 @@ class APIService {
     return this.delete('/calls/', id);
   }
 
+  // Prospect API
+  async getProspects(filters?: ProspectFilters): Promise<PaginatedResponse<ProspectModel>> {
+    return this.list<ProspectModel>('/prospects/', filters);
+  }
+
+  async getProspect(id: string): Promise<ProspectModel> {
+    return this.retrieve<ProspectModel>('/prospects/', id);
+  }
+
+  async createProspect(data: Partial<ProspectModel>): Promise<ProspectModel> {
+    return this.create<ProspectModel>('/prospects/', data);
+  }
+
+  async updateProspect(id: string, data: Partial<ProspectModel>): Promise<ProspectModel> {
+    return this.update<ProspectModel>('/prospects/', id, data);
+  }
+
+  async deleteProspect(id: string): Promise<void> {
+    return this.delete('/prospects/', id);
+  }
+
+  // Prospect specific actions
+  async validateProspect(id: string, notes?: string): Promise<{ message: string }> {
+    const response = await this.apiRequest(`/prospects/${id}/validate_prospect/`, {
+      method: 'POST',
+      body: JSON.stringify({ notes: notes || '' }),
+    });
+    return response.json();
+  }
+
+  async advanceProspectSequence(id: string): Promise<{
+    message: string;
+    new_position: number;
+    status: string;
+  }> {
+    const response = await this.apiRequest(`/prospects/${id}/advance_sequence/`, {
+      method: 'POST',
+    });
+    return response.json();
+  }
+
+  async markProspectResponded(id: string): Promise<{ message: string }> {
+    const response = await this.apiRequest(`/prospects/${id}/mark_responded/`, {
+      method: 'POST',
+    });
+    return response.json();
+  }
+
+  async convertProspectToLead(id: string): Promise<{
+    message: string;
+    lead_id: string;
+  }> {
+    const response = await this.apiRequest(`/prospects/${id}/convert_to_lead/`, {
+      method: 'POST',
+    });
+    return response.json();
+  }
+
+  async getPendingFollowups(): Promise<ProspectModel[]> {
+    const response = await this.apiRequest('/prospects/pending_followups/');
+    return response.json();
+  }
+
+  async enrichProspectFromICO(id: string): Promise<{
+    message: string;
+    ico: string;
+    enriched_fields: Record<string, any>;
+  }> {
+    const response = await this.apiRequest(`/prospects/${id}/enrich_from_ico/`, {
+      method: 'POST',
+    });
+    return response.json();
+  }
+
+  async bulkEnrichProspects(data: { prospect_ids: string[] }): Promise<{
+    message: string;
+    enriched_count: number;
+    failed_count: number;
+    results: Array<{
+      id: string;
+      company_name: string;
+      ico: string;
+      status: string;
+      error?: string;
+    }>;
+  }> {
+    const response = await this.apiRequest('/prospects/bulk_enrich_ico/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  }
+
   // Dashboard API
   async getDashboardStats(): Promise<DashboardStats> {
     const response = await this.apiRequest('/dashboard/stats/');
@@ -272,6 +367,136 @@ class APIService {
   async getRecentActivities(limit?: number): Promise<RecentActivity[]> {
     const queryString = limit ? `?limit=${limit}` : '';
     const response = await this.apiRequest(`/dashboard/activities/${queryString}`);
+    return response.json();
+  }
+
+  // ICO Enrichment API for Organizations, Leads, and Opportunities
+  async enrichOrganizationFromICO(id: string): Promise<{
+    message: string;
+    ico: string;
+    enriched_fields: Record<string, any>;
+  }> {
+    const response = await this.apiRequest(`/accounts/${id}/enrich-ico/`, {
+      method: 'POST',
+    });
+    return response.json();
+  }
+
+  async enrichLeadFromICO(id: string): Promise<{
+    message: string;
+    ico: string;
+    enriched_fields: Record<string, any>;
+  }> {
+    const response = await this.apiRequest(`/leads/${id}/enrich-ico/`, {
+      method: 'POST',
+    });
+    return response.json();
+  }
+
+  async enrichOpportunityFromICO(id: string): Promise<{
+    message: string;
+    ico: string;
+    enriched_fields: Record<string, any>;
+  }> {
+    const response = await this.apiRequest(`/opportunities/${id}/enrich-ico/`, {
+      method: 'POST',
+    });
+    return response.json();
+  }
+
+  // Lead Generation API
+  async generateProspectsCampaign(data: {
+    keyword: string;
+    location: string;
+    max_results: number;
+    radius: number;
+    enable_ai_analysis: boolean;
+    enable_website_scraping: boolean;
+    enable_deduplication: boolean;
+  }): Promise<{
+    success: boolean;
+    prospects: any[];
+    total_found: number;
+    total_processed: number;
+    total_qualified: number;
+    services_used: string[];
+    error?: string;
+  }> {
+    const response = await this.apiRequest('/crm/lead-generation/campaign/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  }
+
+  async searchBusinessesMaps(data: {
+    keyword: string;
+    location: string;
+    radius?: number;
+    max_results?: number;
+  }): Promise<{
+    businesses: any[];
+    count: number;
+  }> {
+    const response = await this.apiRequest('/crm/lead-generation/search-businesses/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  }
+
+  async analyzeWebsite(data: { url: string }): Promise<any> {
+    const response = await this.apiRequest('/crm/lead-generation/analyze-website/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  }
+
+  async lookupCzechBusiness(data: { ico?: string; company_name?: string }): Promise<any> {
+    const response = await this.apiRequest('/crm/lead-generation/lookup-business/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  }
+
+  async analyzeProspectQuality(data: any): Promise<any> {
+    const response = await this.apiRequest('/crm/lead-generation/analyze-quality/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  }
+
+  async checkProspectDuplicates(data: any): Promise<any> {
+    const response = await this.apiRequest('/crm/lead-generation/check-duplicates/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  }
+
+  async enrichProspect(id: string): Promise<{
+    message: string;
+    enriched_fields: string[];
+    quality_score: number;
+  }> {
+    const response = await this.apiRequest(`/crm/prospects/${id}/enrich/`, {
+      method: 'POST',
+    });
+    return response.json();
+  }
+
+  async bulkEnrichProspectsGeneration(data: { prospect_ids: string[] }): Promise<{
+    message: string;
+    total_processed: number;
+    enriched_count: number;
+  }> {
+    const response = await this.apiRequest('/crm/prospects/bulk-enrich/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
     return response.json();
   }
 

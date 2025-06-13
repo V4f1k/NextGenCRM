@@ -10,12 +10,15 @@ import { Contacts } from './pages/Contacts'
 import { Leads } from './pages/Leads'
 import { Opportunities } from './pages/Opportunities'
 import { Tasks } from './pages/Tasks'
+import { Prospects } from './pages/Prospects'
+import { LeadGeneration } from './pages/LeadGeneration'
 import { Login } from './pages/Login'
 import { TaskDetail } from './pages/TaskDetail'
 import { OrganizationDetail } from './pages/OrganizationDetail'
 import { ContactDetail } from './pages/ContactDetail'
 import { LeadDetail } from './pages/LeadDetail'
 import { OpportunityDetail } from './pages/OpportunityDetail'
+import { ProspectDetail } from './pages/ProspectDetail'
 // import './i18n/config' // Temporarily disabled for Docker - DO NOT UNCOMMENT
 
 const queryClient = new QueryClient({
@@ -55,6 +58,9 @@ function App() {
                     <Route path="opportunities/:id" element={<OpportunityDetail />} />
                     <Route path="tasks" element={<Tasks />} />
                     <Route path="tasks/:id" element={<TaskDetail />} />
+                    <Route path="prospects" element={<Prospects />} />
+                    <Route path="prospects/:id" element={<ProspectDetail />} />
+                    <Route path="lead-generation" element={<LeadGeneration />} />
                   </Route>
                 </Routes>
               </div>

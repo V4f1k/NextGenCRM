@@ -169,8 +169,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
         'rest_framework.filters.SearchFilter',
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    'DEFAULT_PAGINATION_CLASS': 'nextgencrm.pagination.CustomPageNumberPagination',
+    'PAGE_SIZE': 25,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
@@ -223,6 +223,19 @@ EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+
+# Lead Generation Services Configuration
+GOOGLE_MAPS_API_KEY = env('GOOGLE_MAPS_API_KEY', default='')
+OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
+
+# Show warnings if API keys are not configured
+if not GOOGLE_MAPS_API_KEY:
+    import warnings
+    warnings.warn('Google Maps API key not configured. Set GOOGLE_MAPS_API_KEY in settings.')
+
+if not OPENAI_API_KEY:
+    import warnings
+    warnings.warn('OpenAI API key not configured. Set OPENAI_API_KEY in settings.')
 
 # Celery Configuration
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/1')
