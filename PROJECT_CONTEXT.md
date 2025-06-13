@@ -539,4 +539,132 @@ npm run lint:fix      # TypeScript
 - Document storage (AWS S3, Google Drive)
 - Third-party CRM data imports
 
+## ✅ CRITICAL DOCKER + VITE IMPORT RESOLUTION ISSUE RESOLVED (2025-06-13)
+
+### 🚨 **Problem**: Drag-and-Drop Libraries Import Failures After Docker Restart
+
+**Issue Description:**
+After Docker container restarts, systematic import resolution failures occurred for ALL drag-and-drop libraries:
+```
+[plugin:vite:import-analysis] Failed to resolve import '@dnd-kit/core'
+[plugin:vite:import-analysis] Failed to resolve import 'react-dnd'  
+[plugin:vite:import-analysis] Failed to resolve import '@atlaskit/pragmatic-drag-and-drop'
+```
+
+**Root Causes Identified:**
+1. **Docker Volume Mount Issues**: Named volume `frontend_node_modules` wasn't properly populated with host dependencies
+2. **Vite Cache Corruption**: Cache in `node_modules/.vite/` and `node_modules/.tmp/` became stale after Docker restarts
+3. **TypeScript `verbatimModuleSyntax` Conflicts**: Strict TS 5.0+ feature conflicted with many npm packages
+4. **Module Resolution Pipeline**: Vite's bundler mode + Docker caused systematic resolution failures
+
+### ✅ **Complete Solution Implemented**
+
+#### 1. **Enhanced Vite Configuration** (`frontend/vite.config.ts`)
+```typescript
+export default defineConfig({
+  optimizeDeps: {
+    include: [
+      'react', 'react-dom', 'react-router-dom', '@tanstack/react-query',
+      'axios', 'lucide-react', 'clsx', 'zod', '@hookform/resolvers', 'react-hook-form',
+      // Drag and drop libraries - critical for Docker compatibility
+      '@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities',
+      'react-dnd', 'react-dnd-html5-backend',
+      '@atlaskit/pragmatic-drag-and-drop', '@atlaskit/pragmatic-drag-and-drop-hitbox'
+    ],
+    force: true, // Force rebuild to clear cache issues after Docker restart
+  },
+  server: {
+    host: '0.0.0.0', port: 5173,
+    watch: { usePolling: true, interval: 1000 },
+    hmr: { port: 5173 }
+  }
+})
+```
+
+#### 2. **TypeScript Configuration Fix** (`frontend/tsconfig.app.json`)
+```json
+{
+  "compilerOptions": {
+    "verbatimModuleSyntax": false  // Disabled for npm package compatibility
+  }
+}
+```
+
+#### 3. **Docker Configuration** (`docker-compose.yml`)
+```yaml
+frontend:
+  volumes:
+    - ./frontend:/app
+    - frontend_node_modules:/app/node_modules  # Named volume prevents binary conflicts
+```
+
+#### 4. **Dockerfile Enhancement** (`docker/Dockerfile.frontend`)
+```dockerfile
+# Clear cache on container start
+CMD ["sh", "-c", "rm -rf node_modules/.vite node_modules/.tmp 2>/dev/null || true && npm run dev:docker"]
+```
+
+#### 5. **Cache Management Scripts** (`frontend/package.json`)
+```json
+{
+  "scripts": {
+    "dev:docker": "vite --host 0.0.0.0 --force",
+    "clear-cache": "rm -rf node_modules/.vite && rm -rf node_modules/.tmp",
+    "docker:clear-cache": "docker exec nextgencrm-frontend rm -rf /app/node_modules/.vite && docker exec nextgencrm-frontend rm -rf /app/node_modules/.tmp",
+    "docker:rebuild": "docker-compose down && docker volume rm nextgencrm_frontend_node_modules 2>/dev/null || true && docker-compose up --build",
+    "docker:restart": "docker-compose restart frontend",
+    "docker:fix-imports": "npm run docker:clear-cache && npm run docker:restart"
+  }
+}
+```
+
+### 🚀 **Quick Recovery Commands**
+
+**Most Common Fix:**
+```bash
+npm run docker:fix-imports
+```
+
+**Alternative Quick Fix:**
+```bash
+npm run docker:clear-cache && npm run docker:restart
+```
+
+**Full Rebuild (if needed):**
+```bash
+npm run docker:rebuild
+```
+
+### 📋 **Prevention Strategy**
+
+1. **Named Volumes**: Always use named volumes for `node_modules` in Docker
+2. **Force Cache Rebuild**: Force Vite to rebuild cache after environment changes  
+3. **Explicit Pre-bundling**: Include all drag-drop libraries in `optimizeDeps.include`
+4. **TypeScript Compatibility**: Disable strict features that conflict with npm packages
+
+### ✅ **Results Achieved**
+
+- ✅ **All drag-drop libraries work**: @dnd-kit, react-dnd, @atlaskit/pragmatic-drag-and-drop
+- ✅ **Docker restart reliability**: No more import failures after container restarts
+- ✅ **Vite optimization**: Proper dependency pre-bundling and cache management
+- ✅ **Development workflow**: Smooth HMR and development experience maintained
+
+### 📖 **Documentation Created**
+
+**Comprehensive troubleshooting guide:** `frontend/DOCKER_TROUBLESHOOTING.md`
+- Complete root cause analysis
+- Step-by-step recovery procedures  
+- Prevention best practices
+- Environment-specific notes (macOS, Linux, Windows + Docker)
+
+### 🎯 **Key Insight**
+
+This was **NOT a library-specific issue** but a **systematic Docker + Vite infrastructure problem**. The same solution works for ANY npm package that experiences import resolution failures after Docker restarts.
+
+### 🔧 **Current Implementation**
+
+The Opportunities page now successfully uses **react-dnd** with full drag-and-drop pipeline functionality, demonstrating that the systematic fix works for all drag-drop libraries.
+
+---
+
 This document should be updated as the project evolves and new features are implemented.

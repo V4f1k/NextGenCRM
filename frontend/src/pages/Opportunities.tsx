@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { Plus, Search, Filter, Edit, Trash2, DollarSign, TrendingUp, Calendar, Building2, User, GripVertical } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { DndProvider, useDrag, useDrop } from 'react-dnd'
-import { HTML5Backend } from 'react-dnd-html5-backend'
 import { useOpportunities, useDeleteOpportunity, useUpdateOpportunity } from '../hooks/useApi'
 import type { OpportunityModel, OpportunityFilters } from '../types'
 import { OPPORTUNITY_STAGES } from '../types'
@@ -11,98 +9,73 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { DataTable } from '../components/ui/DataTable'
 import type { Column } from '../components/ui/DataTable'
 import { useToastContext } from '../context/ToastContext'
+import { DndProvider, useDrag, useDrop } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 
-// Drag and drop types
-const ItemTypes = {
-  OPPORTUNITY: 'opportunity',
-}
+const ItemType = 'OPPORTUNITY'
 
-// Draggable Opportunity Card Component
-interface DraggableOpportunityCardProps {
-  opportunity: OpportunityModel
-  onEdit: (opportunity: OpportunityModel) => void
-  getOrganizationName: (opportunity: OpportunityModel) => string
-  formatCurrency: (amount: number | undefined) => string
-}
-
-function DraggableOpportunityCard({ opportunity, onEdit, getOrganizationName, formatCurrency }: DraggableOpportunityCardProps) {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: ItemTypes.OPPORTUNITY,
+// Draggable card component with react-dnd
+function DraggableCard({ opportunity, onEdit }: { opportunity: OpportunityModel; onEdit: (opp: OpportunityModel) => void }) {
+  const [{ isDragging }, drag] = useDrag({
+    type: ItemType,
     item: { id: opportunity.id, opportunity },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-  }))
+  })
 
   return (
-    <div
+    <div 
       ref={drag}
-      className={`p-3 bg-gray-50 rounded-lg cursor-grab hover:bg-gray-100 transition-all ${
-        isDragging ? 'opacity-50 scale-95' : ''
-      }`}
+      className={`p-3 bg-gray-50 rounded-lg cursor-grab hover:bg-gray-100 ${isDragging ? 'opacity-50' : ''}`}
       onClick={() => onEdit(opportunity)}
     >
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center flex-1">
-          <GripVertical className="w-3 h-3 text-gray-400 mr-1 flex-shrink-0" />
-          <h4 className="text-sm font-medium text-gray-900 truncate flex-1">{opportunity.name}</h4>
+      <div className="flex items-start gap-2">
+        <div className="mt-1">
+          <GripVertical className="w-3 h-3 text-gray-400" />
         </div>
-        <span className="text-xs text-gray-500 ml-2">{opportunity.probability}%</span>
-      </div>
-      <div className="text-sm text-gray-600 mb-1">{getOrganizationName(opportunity)}</div>
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-green-600">{formatCurrency(opportunity.amount)}</span>
-        {opportunity.close_date && (
-          <span className="text-xs text-gray-500">
-            {new Date(opportunity.close_date).toLocaleDateString()}
-          </span>
-        )}
+        <div className="flex-1">
+          <div className="text-sm font-medium">{opportunity.name}</div>
+          <div className="text-xs text-gray-500">{opportunity.account_name}</div>
+          <div className="text-sm font-medium text-green-600 mt-1">
+            ${(opportunity.amount || 0).toLocaleString()}
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
-// Droppable Stage Column Component
-interface DroppableStageColumnProps {
-  stage: { value: string; label: string }
-  opportunities: OpportunityModel[]
-  onDrop: (opportunityId: string, newStage: string) => void
-  getStageColor: (stage: string) => string
-  formatCurrency: (amount: number | undefined) => string
-  onEdit: (opportunity: OpportunityModel) => void
-  getOrganizationName: (opportunity: OpportunityModel) => string
-}
-
-function DroppableStageColumn({ 
+// Droppable column component with react-dnd
+function DroppableColumn({ 
   stage, 
   opportunities, 
-  onDrop, 
-  getStageColor, 
-  formatCurrency, 
-  onEdit, 
-  getOrganizationName 
-}: DroppableStageColumnProps) {
-  const [{ isOver, canDrop }, drop] = useDrop(() => ({
-    accept: ItemTypes.OPPORTUNITY,
-    drop: (item: { id: string; opportunity: OpportunityModel }) => {
-      if (item.opportunity.stage !== stage.value) {
-        onDrop(item.id, stage.value)
-      }
-    },
+  onEdit,
+  getStageColor,
+  formatCurrency,
+  onDrop
+}: { 
+  stage: typeof OPPORTUNITY_STAGES[0]
+  opportunities: OpportunityModel[]
+  onEdit: (opp: OpportunityModel) => void
+  getStageColor: (stage: string) => string
+  formatCurrency: (amount: number | undefined) => string
+  onDrop: (item: any, targetStage: string) => void
+}) {
+  const [{ isOver }, drop] = useDrop({
+    accept: ItemType,
+    drop: (item) => onDrop(item, stage.value),
     collect: (monitor) => ({
       isOver: monitor.isOver(),
-      canDrop: monitor.canDrop(),
     }),
-  }))
+  })
 
   const stageValue = opportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0)
 
   return (
     <div
       ref={drop}
-      className={`card transition-all ${
-        isOver && canDrop ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-      }`}
+      className={`card transition-all ${isOver ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
     >
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -115,12 +88,10 @@ function DroppableStageColumn({
       </div>
       <div className="p-4 space-y-3 max-h-96 overflow-y-auto min-h-[200px]">
         {opportunities.map((opportunity) => (
-          <DraggableOpportunityCard
+          <DraggableCard
             key={opportunity.id}
             opportunity={opportunity}
             onEdit={onEdit}
-            getOrganizationName={getOrganizationName}
-            formatCurrency={formatCurrency}
           />
         ))}
         {opportunities.length === 0 && (
@@ -182,20 +153,13 @@ export function Opportunities() {
     },
   })
 
-  // Handle dropping opportunity into new stage
-  const handleDrop = (opportunityId: string, newStage: string) => {
-    const opportunity = opportunities.find(opp => opp.id === opportunityId)
-    if (!opportunity) return
-
-    // Update the opportunity stage
-    updateOpportunityMutation.mutate({
-      id: opportunityId,
-      data: { stage: newStage }
-    })
-  }
+  // Calculate pipeline metrics
+  const opportunities = data?.results || []
+  const totalValue = opportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0)
+  const weightedValue = opportunities.reduce((sum, opp) => sum + ((opp.amount || 0) * (opp.probability || 0) / 100), 0)
+  const avgDealSize = opportunities.length > 0 ? totalValue / opportunities.length : 0
 
   const getOrganizationName = (opportunity: OpportunityModel) => {
-    // Use account_name directly from the API response
     return opportunity.account_name || 'No Organization'
   }
 
@@ -255,11 +219,17 @@ export function Opportunities() {
     setSorting({ field, direction })
   }
 
-  // Calculate pipeline metrics
-  const opportunities = data?.results || []
-  const totalValue = opportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0)
-  const weightedValue = opportunities.reduce((sum, opp) => sum + ((opp.amount || 0) * (opp.probability || 0) / 100), 0)
-  const avgDealSize = opportunities.length > 0 ? totalValue / opportunities.length : 0
+  // Handle drop with react-dnd
+  const handleDrop = (item: any, targetStage: string) => {
+    const opportunity = item.opportunity as OpportunityModel
+
+    if (opportunity.stage !== targetStage) {
+      updateOpportunityMutation.mutate({
+        id: opportunity.id,
+        data: { stage: targetStage }
+      })
+    }
+  }
 
   // Group opportunities by stage for pipeline view
   const opportunitiesByStage = OPPORTUNITY_STAGES.reduce((acc, stage) => {
@@ -291,16 +261,6 @@ export function Opportunities() {
         <div className="flex items-center">
           <Building2 className="w-4 h-4 text-gray-400 mr-2" />
           <span className="text-sm text-gray-900">{getOrganizationName(opportunity)}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'contact_name',
-      header: 'Contact',
-      render: (_, opportunity) => (
-        <div className="flex items-center">
-          <User className="w-4 h-4 text-gray-400 mr-2" />
-          <span className="text-sm text-gray-900">{getContactName(opportunity)}</span>
         </div>
       ),
     },
@@ -392,26 +352,8 @@ export function Opportunities() {
     </div>
   )
 
-  const renderPipelineView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      {OPPORTUNITY_STAGES.map((stage) => (
-        <DroppableStageColumn
-          key={stage.value}
-          stage={stage}
-          opportunities={opportunitiesByStage[stage.value] || []}
-          onDrop={handleDrop}
-          getStageColor={getStageColor}
-          formatCurrency={formatCurrency}
-          onEdit={handleEditOpportunity}
-          getOrganizationName={getOrganizationName}
-        />
-      ))}
-    </div>
-  )
-
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div>
+    <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -498,7 +440,7 @@ export function Opportunities() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters - only show in table view */}
       {viewMode === 'table' && (
         <div className="card p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -524,9 +466,23 @@ export function Opportunities() {
         </div>
       )}
 
-      {/* Content */}
+      {/* Content based on view mode */}
       {viewMode === 'pipeline' ? (
-        renderPipelineView()
+        <DndProvider backend={HTML5Backend}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {OPPORTUNITY_STAGES.map((stage) => (
+              <DroppableColumn
+                key={stage.value}
+                stage={stage}
+                opportunities={opportunitiesByStage[stage.value] || []}
+                onEdit={handleEditOpportunity}
+                getStageColor={getStageColor}
+                formatCurrency={formatCurrency}
+                onDrop={handleDrop}
+              />
+            ))}
+          </div>
+        </DndProvider>
       ) : (
         <DataTable
           data={opportunities}
@@ -564,7 +520,6 @@ export function Opportunities() {
         type="danger"
         isLoading={deleteOpportunityMutation.isPending}
       />
-      </div>
-    </DndProvider>
+    </div>
   )
 }

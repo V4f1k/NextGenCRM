@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Plus, Search, Filter, Loader2, AlertCircle, Edit, Trash2, Building2 } from 'lucide-react'
-import { useOrganizations, useDeleteOrganization } from '../hooks/useApi'
+import { useOrganizations, useDeleteOrganization, useUpdateOrganization } from '../hooks/useApi'
 import type { OrganizationModel, OrganizationFilters } from '../types'
+import { ORGANIZATION_TYPES, ORGANIZATION_INDUSTRIES } from '../types'
 import { OrganizationForm } from '../components/forms/OrganizationForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { InlineEditText, InlineEditSelect, InlineEditNumber, InlineEditEmail } from '../components/ui/InlineEdit'
 import { useToastContext } from '../context/ToastContext'
 
 export function Organizations() {
@@ -35,8 +37,18 @@ export function Organizations() {
     },
   })
 
-  const formatCurrency = (amount: number | undefined) => {
-    if (!amount) return 'N/A'
+  const updateOrganizationMutation = useUpdateOrganization({
+    onSuccess: () => {
+      toast.success('Organization updated successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to update organization', {
+        description: error.message,
+      })
+    },
+  })
+
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -84,6 +96,13 @@ export function Organizations() {
     if (deleteDialog.organization) {
       deleteOrganizationMutation.mutate(deleteDialog.organization.id)
     }
+  }
+
+  const updateOrganizationField = async (organizationId: string, field: keyof OrganizationModel, value: any): Promise<void> => {
+    await updateOrganizationMutation.mutateAsync({
+      id: organizationId,
+      data: { [field]: value }
+    })
   }
   return (
     <div>
@@ -171,42 +190,68 @@ export function Organizations() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {data.results.map((organization) => (
                     <tr key={organization.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {organization.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {organization.website || 'No website'}
-                          </div>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <InlineEditText
+                            value={organization.name}
+                            onSave={(value) => updateOrganizationField(organization.id, 'name', value)}
+                            placeholder="Organization name"
+                            required
+                            className="text-sm font-medium"
+                          />
+                          <InlineEditText
+                            value={organization.website}
+                            onSave={(value) => updateOrganizationField(organization.id, 'website', value)}
+                            placeholder="Website URL"
+                            className="text-sm text-gray-500"
+                          />
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {organization.type ? (
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(organization.type)}`}>
-                            {organization.type.charAt(0).toUpperCase() + organization.type.slice(1)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {organization.industry ? (
-                          organization.industry.charAt(0).toUpperCase() + organization.industry.slice(1).replace('_', ' ')
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
+                        <InlineEditSelect
+                          value={organization.type}
+                          options={[...ORGANIZATION_TYPES]}
+                          onSave={(value) => updateOrganizationField(organization.id, 'type', value)}
+                          placeholder="Select type"
+                          allowEmpty
+                          emptyLabel="No type"
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {organization.email_address || 'No email'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {organization.phone_number || 'No phone'}
+                        <InlineEditSelect
+                          value={organization.industry}
+                          options={[...ORGANIZATION_INDUSTRIES]}
+                          onSave={(value) => updateOrganizationField(organization.id, 'industry', value)}
+                          placeholder="Select industry"
+                          allowEmpty
+                          emptyLabel="No industry"
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <InlineEditEmail
+                            value={organization.email_address}
+                            onSave={(value) => updateOrganizationField(organization.id, 'email_address', value)}
+                            placeholder="Email address"
+                            allowEmpty
+                          />
+                          <InlineEditText
+                            value={organization.phone_number}
+                            onSave={(value) => updateOrganizationField(organization.id, 'phone_number', value)}
+                            placeholder="Phone number"
+                            className="text-sm text-gray-500"
+                          />
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(organization.annual_revenue)}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <InlineEditNumber
+                          value={organization.annual_revenue}
+                          onSave={(value) => updateOrganizationField(organization.id, 'annual_revenue', value)}
+                          placeholder="Annual revenue"
+                          min={0}
+                          formatDisplay={formatCurrency}
+                          allowEmpty
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">

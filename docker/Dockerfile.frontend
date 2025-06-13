@@ -18,8 +18,8 @@ WORKDIR /app
 # Copy package files
 COPY frontend/package*.json ./
 
-# Install all dependencies (including dev)
-RUN npm install
+# Install all dependencies (including dev) and clear any cache
+RUN npm install && npm cache clean --force
 
 # Copy source code
 COPY frontend/ .
@@ -27,8 +27,8 @@ COPY frontend/ .
 # Expose port
 EXPOSE 3000
 
-# Start development server
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Clear any existing cache and start development server
+CMD ["sh", "-c", "rm -rf node_modules/.vite node_modules/.tmp 2>/dev/null || true && npm run dev:docker"]
 
 # Build stage
 FROM base as build
